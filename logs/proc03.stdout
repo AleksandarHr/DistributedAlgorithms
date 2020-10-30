@@ -1,0 +1,15 @@
+My PID is 8952.
+Use 'kill -SIGINT 8952 ' or 'kill -SIGTERM 8952 ' to stop processing packets.
+My id is 3.
+List of hosts is:
+1, 127.0.0.1, 11001
+2, 127.0.0.1, 11002
+3, 127.0.0.1, 11003
+Barrier: 127.0.0.1:10000
+Signal: 127.0.0.1:11000
+Output: /home/dcl/Desktop/DistributedAlgorithms/logs/proc03.output
+Config: /tmp/tmp30z2b6b_
+Waiting for all processes for finish initialization
+Accessing barrier...
+Broadcasting messages...
+Signaling end of broadcasting messages
