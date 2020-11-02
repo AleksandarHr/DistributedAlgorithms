@@ -27,7 +27,6 @@ public class Listener extends Thread {
 	public void run() {
 		running = true;
 		DatagramSocket socket = this.process.getSocket();
-		BestEffortBroadcast beb = new BestEffortBroadcast(this.process);
 		while (running) {
 			receivedPacket = new DatagramPacket(buffer, buffer.length);;
 			try {
@@ -42,10 +41,10 @@ public class Listener extends Thread {
 						this.handleAckMessage(msg);
 					} else if (msg.isBroadcastMessage()){
 						System.out.println("Receiving a BROADCAST from " + senderPort);
-						this.handleBroadcastMessage(msg, senderIp, senderPort, beb);
+						this.handleBroadcastMessage(msg, senderIp, senderPort, this.process.getBeb());
 					} else {
 						System.out.println("Receiving a NORMAL MESSAGE from " + senderPort);
-						this.handleRegularMessage(msg, senderIp, senderPort, beb);
+						this.handleRegularMessage(msg, senderIp, senderPort, this.process.getBeb());
 					}
 				}
 				
