@@ -25,9 +25,6 @@ public class Sender extends Thread {
 	
 	public void run() {
 		try {
-			if (this.process.getSocket() == null) {
-				System.out.println("WHY IS NULLL??");
-			}
 			sendMessage(this.toSend, this.process.getSocket());
 		} catch (IOException e) {
 			// TODO Auto-generated catch block

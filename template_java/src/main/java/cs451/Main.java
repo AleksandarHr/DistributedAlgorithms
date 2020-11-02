@@ -68,11 +68,10 @@ public class Main {
 
         System.out.println("Broadcasting messages...");
         p.setAllProcesses(addresses);
-        System.out.println("I KNOW ABOUT " + addresses.size() + " processes.");
+
         if (parser.myId() == 1) {
         	System.out.println("Process " + parser.myId() + " broadcasting message \"Hello\"");
-        	BestEffortBroadcast beb = new BestEffortBroadcast(p);
-        	beb.bebBroadcast("Hello", 1);
+        	p.getBeb().bebBroadcast("Hello", 1);
         }
         System.out.println("Signaling end of broadcasting messages");
         coordinator.finishedBroadcasting();

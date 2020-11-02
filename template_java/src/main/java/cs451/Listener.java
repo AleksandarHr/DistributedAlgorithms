@@ -27,6 +27,7 @@ public class Listener extends Thread {
 	public void run() {
 		running = true;
 		DatagramSocket socket = this.process.getSocket();
+		BestEffortBroadcast beb = new BestEffortBroadcast(this.process);
 		while (running) {
 			receivedPacket = new DatagramPacket(buffer, buffer.length);;
 			try {
@@ -34,16 +35,18 @@ public class Listener extends Thread {
 				InetAddress senderIp = receivedPacket.getAddress();
 				int senderPort = receivedPacket.getPort();
 				Message msg = getMessageObjectFromByteArray(receivedPacket.getData());
-			
-				if (msg.isAck()) {
-					System.out.println("Receiving an ACK from " + senderPort);
-					this.handleAckMessage(msg);
-				} else if (msg.isBroadcastMessage()){
-					System.out.println("Receiving a BROADCAST from " + senderPort);
-					this.handleBroadcastMessage(msg, senderIp, senderPort);
-				} else {
-					System.out.println("Receiving a NORMAL MESSAGE from " + senderPort);
-					this.handleRegularMessage(msg, senderIp, senderPort);
+				
+				if (msg != null) {
+					if (msg.isAck()) {
+						System.out.println("Receiving an ACK from " + senderPort);
+						this.handleAckMessage(msg);
+					} else if (msg.isBroadcastMessage()){
+						System.out.println("Receiving a BROADCAST from " + senderPort);
+						this.handleBroadcastMessage(msg, senderIp, senderPort, beb);
+					} else {
+						System.out.println("Receiving a NORMAL MESSAGE from " + senderPort);
+						this.handleRegularMessage(msg, senderIp, senderPort, beb);
+					}
 				}
 				
 			} catch (IOException e) {
@@ -78,9 +81,9 @@ public class Listener extends Thread {
 	/*
 	 * 
 	 */
-	private void handleBroadcastMessage(Message msg, InetAddress ip, int port) {
+	private void handleBroadcastMessage(Message msg, InetAddress ip, int port, BestEffortBroadcast beb) {
 		// Deliver the message, if not previously delivered
-		this.process.addDelieveredMessage(msg);
+		beb.bebDeliver(msg);
 	
 		// Send an ack for the message to the sender
 		Message ack = new Message(msg);
@@ -97,9 +100,9 @@ public class Listener extends Thread {
 	/*
 	 * 
 	 */
-	private void handleRegularMessage(Message msg, InetAddress ip, int port) {
+	private void handleRegularMessage(Message msg, InetAddress ip, int port, BestEffortBroadcast beb) {
 		// Deliver the message, if not previously delivered
-		this.process.addDelieveredMessage(msg);
+		beb.bebDeliver(msg);
 		
 		// Send an ack for the message to the sender
 		System.out.println("SENDING AN ACK to " + port);

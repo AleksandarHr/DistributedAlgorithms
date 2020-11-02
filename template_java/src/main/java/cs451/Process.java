@@ -37,9 +37,10 @@ public class Process {
 	// hashmap of this process' messages which have been acknowledged
 	private volatile ConcurrentHashMap<Message, Boolean> acknowledged;
 	
-	private boolean running;
-	private byte[] buffer = new byte[256];
 	DatagramPacket packet = null;
+
+	private BestEffortBroadcast beb;
+	private UniformReliableBroadcast urb;
 	
 	public Process(InetAddress ip, int port, int pid) {
 		this.ip = ip;
@@ -60,7 +61,10 @@ public class Process {
 		this.broadcaster = new Broadcaster(this);
 		System.out.println("Opening listener thread");
 		this.listener.start();
-//		this.broadcaster.start();
+		this.beb = new BestEffortBroadcast(this);
+		this.urb = new UniformReliableBroadcast(this.beb);
+		
+		//this.broadcaster.start();
 	}
 	
 	
@@ -109,5 +113,13 @@ public class Process {
 	
 	public InetAddress getProcessAddress() {
 		return this.ip;
+	}
+	
+	public BestEffortBroadcast getBeb() {
+		return this.beb;
+	}
+	
+	public UniformReliableBroadcast getUrb() {
+		return this.urb;
 	}
 }

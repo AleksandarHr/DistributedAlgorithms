@@ -21,8 +21,19 @@ public class BestEffortBroadcast {
 		}
 	}
 	
-	public boolean bebDeliver(Message m) {
-		// always deliver
-		return true;
+	public void bebBroadcast(Message m) {
+		for (InetSocketAddress addr : this.process.getAllProcesses()) {
+			this.process.sendP2PMessage(m, addr.getAddress(), addr.getPort());
+		}
+	}
+	
+	public void bebDeliver(Message msg) {
+		// only deliver message if it has not been yet delivered - underlying perfect links abstraction
+		// already takes care of that
+		this.process.addDelieveredMessage(msg);
+	}
+	
+	public Process getProcess() {
+		return this.process;
 	}
 }

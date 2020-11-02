@@ -4,10 +4,7 @@ import java.io.Serializable;
 import java.net.InetAddress;
 
 public class Message implements Serializable {
-	
-	/**
-	 * 
-	 */
+
 	private static final long serialVersionUID = 14321532143L;
 
 	private String content;
