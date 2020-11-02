@@ -34,7 +34,7 @@ public class Process {
 	// hashmap of messages which the process has delivered
 	private volatile ConcurrentHashMap<Message, Boolean> delivered;
 	
-	// hashmap of messages which the process has acknowledged
+	// hashmap of this process' messages which have been acknowledged
 	private volatile ConcurrentHashMap<Message, Boolean> acknowledged;
 	
 	private boolean running;
@@ -42,30 +42,58 @@ public class Process {
 	DatagramPacket packet = null;
 	
 	public Process(InetAddress ip, int port, int pid) {
-		try {
-			this.socket = new DatagramSocket(this. port, this.ip);
-		} catch (SocketException e) {
-			System.out.println("Unable to open socket.");
-		}
-
 		this.ip = ip;
 		this.port = port;
 		this.pid = pid;		
+		
+		try {
+			this.socket = new DatagramSocket(this.port, this.ip);
+		} catch (SocketException e) {
+			e.printStackTrace();
+			System.out.println("Unable to open socket: Port = " + this.port + " :: IP = " + this.ip);
+		}
 		
 		this.delivered = new ConcurrentHashMap<Message, Boolean>();
 		this.acknowledged = new ConcurrentHashMap<Message, Boolean>();
 
 		this.listener = new Listener(this);
 		this.broadcaster = new Broadcaster(this);
-		this.listener.run();
-		this.broadcaster.run();
+		System.out.println("Opening listener thread");
+		this.listener.start();
+//		this.broadcaster.start();
 	}
 	
 	
+	public void sendP2PMessage(Message m, InetAddress ip, int port) {
+		new Sender(this, m, port, ip).start();
+	}
 	
+	public void addDelieveredMessage(Message msg) {
+		if (!this.hasBeenDelievered(msg)) {
+			this.delivered.put(msg, true);
+			System.out.println("DELIVERING NOW");
+		}
+	}
 	
+	public boolean hasBeenDelievered(Message msg) {
+		return this.delivered.containsKey(msg);
+	}
 	
+	public boolean hasBeenAcknowledged(Message msg) {
+		return this.acknowledged.containsKey(msg);
+	}
 	
+	public void addAcknowledgement(Message ack) {
+		this.acknowledged.put(ack, true);
+	}
+	
+	public void setAllProcesses(ArrayList<InetSocketAddress> processes) {
+		this.allProcesses = processes;
+	}
+	
+	public ArrayList<InetSocketAddress> getAllProcesses() {
+		return this.allProcesses;
+	}
 	
 	public DatagramSocket getSocket() {
 		return this.socket;
@@ -73,5 +101,13 @@ public class Process {
 	
 	public Integer getProcessId() {
 		return this.pid;
+	}
+	
+	public Integer getProcessPort() {
+		return this.port;
+	}
+	
+	public InetAddress getProcessAddress() {
+		return this.ip;
 	}
 }

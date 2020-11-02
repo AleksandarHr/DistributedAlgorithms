@@ -1,9 +1,15 @@
 package cs451;
 
+import java.io.Serializable;
 import java.net.InetAddress;
 
-public class Message {
+public class Message implements Serializable {
 	
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = 14321532143L;
+
 	private String content;
 
 	private int destPort;
@@ -12,27 +18,46 @@ public class Message {
 	private InetAddress sourceAddr;
 	
 	private boolean isAck;
-	private boolean isSimpleBroadcast;
+	private boolean isBroadcastMessage;
 	
 	private int msgId;
 	private int senderId;
-	private boolean toAck;
-	private boolean toBroadcast;
 	
-	
-	public Message(String content, int destPort, int sourcePort, InetAddress destAddr, InetAddress sourceAddr,
-			int msgId, int senderId, boolean toAck, boolean toBroadcast) {
-		super();
-		this.content = content;
-		this.destPort = destPort;
-		this.sourcePort = sourcePort;
-		this.destAddr = destAddr;
-		this.sourceAddr = sourceAddr;
-		this.msgId = msgId;
-		this.senderId = senderId;
-		this.toAck = toAck;
-		this.toBroadcast = toBroadcast;
+	// Ack Message constructor - ack message has the same dest/source port/addr
+	// and message id, but has the isAck field set to true;
+	public Message(Message originalMessage) {
+		this.isAck = true;
+		this.msgId = originalMessage.getMsgId();
+		this.destPort = originalMessage.getDestPort();
+		this.destAddr = originalMessage.getDestAddr();
+		this.sourcePort = originalMessage.getSourcePort();
+		this.sourceAddr = originalMessage.getSourceAddr();
 	}
+	
+	// Message constructor - creates a message object with provided string content, dest/source port/addr
+	// and makes it a broadcast message if specified
+	public Message(String content, int msgId, int destPort, InetAddress destAddr, int sourcePort, InetAddress sourceAddr, boolean isBroadcast) {
+		this.isAck = false;
+		this.isBroadcastMessage = isBroadcast;
+		this.content = content;
+		this.msgId = msgId;
+		this.destPort = destPort;
+		this.destAddr = destAddr;
+		this.sourcePort = sourcePort;
+		this.sourceAddr = sourceAddr;
+	}
+	
+//	public Message(String content, int destPort, int sourcePort, InetAddress destAddr, InetAddress sourceAddr,
+//			int msgId, int senderId) {
+//		super();
+//		this.content = content;
+//		this.destPort = destPort;
+//		this.sourcePort = sourcePort;
+//		this.destAddr = destAddr;
+//		this.sourceAddr = sourceAddr;
+//		this.msgId = msgId;
+//		this.senderId = senderId;
+//	}
 	
 	public String getContent() {
 		return content;
@@ -70,26 +95,17 @@ public class Message {
 	public void setSenderId(int senderId) {
 		this.senderId = senderId;
 	}
-	public boolean isToAck() {
-		return toAck;
+	public boolean isBroadcastMessage() {
+		return this.isBroadcastMessage;
 	}
-	public void setToAck(boolean toAck) {
-		this.toAck = toAck;
-	}
-	public boolean isToBroadcast() {
-		return toBroadcast;
-	}
-	public void setToBroadcast(boolean toBroadcast) {
-		this.toBroadcast = toBroadcast;
+	public void setIsBroadcastMessage(boolean isBcast) {
+		this.isBroadcastMessage = isBcast;
 	}
 	public int getMsgId() {
 		return msgId;
 	}
 	public boolean isAck() {
 		return this.isAck;
-	}
-	public boolean isSimpleBroadcast() {
-		return this.isSimpleBroadcast;
 	}
 	@Override
 	public int hashCode() {
@@ -117,7 +133,14 @@ public class Message {
 				return false;
 		} else if (!sourceAddr.equals(other.sourceAddr))
 			return false;
+		if (destAddr == null) {
+			if (other.destAddr != null)
+				return false;
+		} else if (!destAddr.equals(other.destAddr))
+			return false;
 		if (sourcePort != other.sourcePort)
+			return false;
+		if (destPort != other.destPort)
 			return false;
 		return true;
 	}

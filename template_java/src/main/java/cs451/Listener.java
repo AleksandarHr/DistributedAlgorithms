@@ -35,10 +35,15 @@ public class Listener extends Thread {
 				int senderPort = receivedPacket.getPort();
 				Message msg = getMessageObjectFromByteArray(receivedPacket.getData());
 			
-				if (msg.isSimpleBroadcast()) {
-					this.handleBroadcastMessage(msg);
-				} else if (msg.isAck()) {
+				if (msg.isAck()) {
+					System.out.println("Receiving an ACK from " + senderPort);
 					this.handleAckMessage(msg);
+				} else if (msg.isBroadcastMessage()){
+					System.out.println("Receiving a BROADCAST from " + senderPort);
+					this.handleBroadcastMessage(msg, senderIp, senderPort);
+				} else {
+					System.out.println("Receiving a NORMAL MESSAGE from " + senderPort);
+					this.handleRegularMessage(msg, senderIp, senderPort);
 				}
 				
 			} catch (IOException e) {
@@ -73,22 +78,32 @@ public class Listener extends Thread {
 	/*
 	 * 
 	 */
-	private void handleBroadcastMessage(Message msg) {
-		// If message is from another process, broadcast the message
-		if (msg.getSenderId() != this.process.getProcessId()) {
-			
-		}
-		
-		// Deliver the message
-		
-		
-		// Send an ack for the message
+	private void handleBroadcastMessage(Message msg, InetAddress ip, int port) {
+		// Deliver the message, if not previously delivered
+		this.process.addDelieveredMessage(msg);
+	
+		// Send an ack for the message to the sender
+		Message ack = new Message(msg);
+		this.process.sendP2PMessage(ack, ip, port);
 	}
 	
 	/*
 	 * 
 	 */
 	private void handleAckMessage(Message msg) {
+		this.process.addAcknowledgement(msg);
+	}
+	
+	/*
+	 * 
+	 */
+	private void handleRegularMessage(Message msg, InetAddress ip, int port) {
+		// Deliver the message, if not previously delivered
+		this.process.addDelieveredMessage(msg);
 		
+		// Send an ack for the message to the sender
+		System.out.println("SENDING AN ACK to " + port);
+		Message ack = new Message(msg);
+		this.process.sendP2PMessage(ack, ip, port);
 	}
 }

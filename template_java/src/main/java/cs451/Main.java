@@ -3,7 +3,11 @@ package cs451;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
 
 public class Main {
 
@@ -24,7 +28,7 @@ public class Main {
         });
     }
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws InterruptedException, UnknownHostException {
         Parser parser = new Parser(args);
         parser.parse();
 
@@ -34,11 +38,18 @@ public class Main {
         long pid = ProcessHandle.current().pid();
         System.out.println("My PID is " + pid + ".");
         System.out.println("Use 'kill -SIGINT " + pid + " ' or 'kill -SIGTERM " + pid + " ' to stop processing packets.");
-
+        ArrayList<InetSocketAddress> addresses = new ArrayList<InetSocketAddress>();
         System.out.println("My id is " + parser.myId() + ".");
         System.out.println("List of hosts is:");
+        Process p = null;
         for (Host host: parser.hosts()) {
-            System.out.println(host.getId() + ", " + host.getIp() + ", " + host.getPort());
+    		System.out.println(host.getId() + ", " + host.getIp() + ", " + host.getPort());
+        	InetSocketAddress addr = new InetSocketAddress(InetAddress.getByName(host.getIp()), host.getPort());
+        	addresses.add(addr);
+    		if (host.getId() == parser.myId()) {
+    			System.out.println("It's me!!");
+        		p = new Process(InetAddress.getByName(host.getIp()), host.getPort(), host.getId());
+        	}
         }
 
         System.out.println("Barrier: " + parser.barrierIp() + ":" + parser.barrierPort());
@@ -52,17 +63,23 @@ public class Main {
 
         Coordinator coordinator = new Coordinator(parser.myId(), parser.barrierIp(), parser.barrierPort(), parser.signalIp(), parser.signalPort());
 
-	System.out.println("Waiting for all processes for finish initialization");
+        System.out.println("Waiting for all processes for finish initialization");
         coordinator.waitOnBarrier();
 
-	System.out.println("Broadcasting messages...");
-
-	System.out.println("Signaling end of broadcasting messages");
+        System.out.println("Broadcasting messages...");
+        p.setAllProcesses(addresses);
+        System.out.println("I KNOW ABOUT " + addresses.size() + " processes.");
+        if (parser.myId() == 1) {
+        	System.out.println("Process " + parser.myId() + " broadcasting message \"Hello\"");
+        	BestEffortBroadcast beb = new BestEffortBroadcast(p);
+        	beb.bebBroadcast("Hello", 1);
+        }
+        System.out.println("Signaling end of broadcasting messages");
         coordinator.finishedBroadcasting();
 
-	while (true) {
-	    // Sleep for 1 hour
-	    Thread.sleep(60 * 60 * 1000);
-	}
+        while (true) {
+        	// Sleep for 1 hour
+        	Thread.sleep(60 * 60 * 1000);
+        }
     }
 }
