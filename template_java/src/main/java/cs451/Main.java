@@ -77,7 +77,7 @@ public class Main {
         if (parser.myId() == 1) {
         	for (int i = 1; i <= 10; i++) {
         		System.out.println("BEB message with ID = " + i);
-        		p.getBeb().bebBroadcast("Hello " + i, i, parser.myId());
+        		p.getBeb().bebBroadcast("Hello " + i, i);
         	}
         }
         System.out.println("Signaling end of broadcasting messages");

@@ -17,20 +17,17 @@ public class Process {
 	private DatagramSocket socket;
 	private InetAddress ip;
 	private Integer port;
+	private boolean isAlive;
 	
 	// Info from membership file - process id, list of all processes, broadcast count
 	private Integer pid;
 	private ArrayList<InetSocketAddress> allProcesses;
     private HashMap<InetSocketAddress, Integer> addressesAndPids;
-
-	private Integer broadcastCount;
 	
 	// Listener object of the process
 	private Listener listener;
 	// Sender object of the process
 	private Sender sender;
-	// Broadcaster object of the process
-	private Broadcaster broadcaster;
 	
 	// Message ID counter for messages of this processes
 	static Integer msgId;
@@ -50,6 +47,7 @@ public class Process {
 		this.ip = ip;
 		this.port = port;
 		this.pid = pid;		
+		this.isAlive = true;
 		
 		try {
 			this.socket = new DatagramSocket(this.port, this.ip);
@@ -62,13 +60,10 @@ public class Process {
 		this.acknowledged = new ConcurrentHashMap<Message, Boolean>();
 
 		this.listener = new Listener(this);
-		this.broadcaster = new Broadcaster(this);
 		System.out.println("Opening listener thread");
 		this.listener.start();
 		this.beb = new BestEffortBroadcast(this);
-//		this.urb = new UniformReliableBroadcast(this.beb);
-		
-		//this.broadcaster.start();
+		this.urb = new UniformReliableBroadcast(this.beb);
 	}
 	
 	
@@ -76,11 +71,13 @@ public class Process {
 		new Sender(this, m, port, ip).start();
 	}
 	
-	public void addDelieveredMessage(Message msg) {
+	public boolean addDelieveredMessage(Message msg) {
 		if (!this.hasBeenDelievered(msg)) {
 			this.delivered.put(msg, true);
+			return true;
 //			System.out.println("DELIVERING NOW");
 		}
+		return false;
 	}
 	
 	public boolean hasBeenDelievered(Message msg) {
@@ -125,6 +122,14 @@ public class Process {
 	
 	public InetAddress getProcessAddress() {
 		return this.ip;
+	}
+	
+	public boolean isAlive() {
+		return this.isAlive;
+	}
+	
+	public void setIsAlive(boolean isAlive) {
+		this.isAlive = isAlive;
 	}
 	
 	public BestEffortBroadcast getBeb() {

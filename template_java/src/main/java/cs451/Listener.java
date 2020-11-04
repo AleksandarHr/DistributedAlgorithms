@@ -17,7 +17,6 @@ public class Listener extends Thread {
 	private Process process;
 	private InetAddress ip;
 	private Integer port;
-	private boolean running;
 	private byte[] buffer = new byte[UDPPACKETSIZELIMIT];
 	DatagramPacket receivedPacket = null;
 	
@@ -26,9 +25,8 @@ public class Listener extends Thread {
 	}
 	
 	public void run() {
-		running = true;
 		DatagramSocket socket = this.process.getSocket();
-		while (running) {
+		while (this.process.isAlive()) {
 			receivedPacket = new DatagramPacket(buffer, buffer.length);;
 			try {
 				socket.receive(receivedPacket);
