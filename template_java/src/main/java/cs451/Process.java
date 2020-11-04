@@ -7,6 +7,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Process {
@@ -19,6 +21,8 @@ public class Process {
 	// Info from membership file - process id, list of all processes, broadcast count
 	private Integer pid;
 	private ArrayList<InetSocketAddress> allProcesses;
+    private HashMap<InetSocketAddress, Integer> addressesAndPids;
+
 	private Integer broadcastCount;
 	
 	// Listener object of the process
@@ -62,7 +66,7 @@ public class Process {
 		System.out.println("Opening listener thread");
 		this.listener.start();
 		this.beb = new BestEffortBroadcast(this);
-		this.urb = new UniformReliableBroadcast(this.beb);
+//		this.urb = new UniformReliableBroadcast(this.beb);
 		
 		//this.broadcaster.start();
 	}
@@ -75,7 +79,7 @@ public class Process {
 	public void addDelieveredMessage(Message msg) {
 		if (!this.hasBeenDelievered(msg)) {
 			this.delivered.put(msg, true);
-			System.out.println("DELIVERING NOW");
+//			System.out.println("DELIVERING NOW");
 		}
 	}
 	
@@ -93,6 +97,14 @@ public class Process {
 	
 	public void setAllProcesses(ArrayList<InetSocketAddress> processes) {
 		this.allProcesses = processes;
+	}
+	
+	public void setAddressesAndPids(HashMap<InetSocketAddress, Integer> procs) {
+		this.addressesAndPids = procs;
+	}
+	
+	public HashMap<InetSocketAddress, Integer> getAddressesAndPids() {
+		return this.addressesAndPids;
 	}
 	
 	public ArrayList<InetSocketAddress> getAllProcesses() {

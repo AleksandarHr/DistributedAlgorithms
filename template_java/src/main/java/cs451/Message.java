@@ -18,8 +18,8 @@ public class Message implements Serializable {
 	private boolean isBroadcastMessage;
 	
 	private int msgId;
-	private int senderId;
-	
+	private int originalPid;
+
 	// Ack Message constructor - ack message has the same dest/source port/addr
 	// and message id, but has the isAck field set to true;
 	public Message(Message originalMessage) {
@@ -29,15 +29,17 @@ public class Message implements Serializable {
 		this.destAddr = originalMessage.getDestAddr();
 		this.sourcePort = originalMessage.getSourcePort();
 		this.sourceAddr = originalMessage.getSourceAddr();
+		this.originalPid = originalMessage.getOriginalPid();
 	}
 	
 	// Message constructor - creates a message object with provided string content, dest/source port/addr
 	// and makes it a broadcast message if specified
-	public Message(String content, int msgId, int destPort, InetAddress destAddr, int sourcePort, InetAddress sourceAddr, boolean isBroadcast) {
+	public Message(String content, int msgId, int senderPid, int destPort, InetAddress destAddr, int sourcePort, InetAddress sourceAddr, boolean isBroadcast) {
 		this.isAck = false;
 		this.isBroadcastMessage = isBroadcast;
 		this.content = content;
 		this.msgId = msgId;
+		this.originalPid = senderPid;
 		this.destPort = destPort;
 		this.destAddr = destAddr;
 		this.sourcePort = sourcePort;
@@ -86,11 +88,11 @@ public class Message implements Serializable {
 	public void setSourceAddr(InetAddress sourceAddr) {
 		this.sourceAddr = sourceAddr;
 	}
-	public int getSenderId() {
-		return senderId;
+	public int getOriginalPid() {
+		return this.originalPid;
 	}
-	public void setSenderId(int senderId) {
-		this.senderId = senderId;
+	public void setOriginalPid(int originalPid) {
+		this.originalPid = originalPid;
 	}
 	public boolean isBroadcastMessage() {
 		return this.isBroadcastMessage;
@@ -104,13 +106,13 @@ public class Message implements Serializable {
 	public boolean isAck() {
 		return this.isAck;
 	}
+	
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + msgId;
-		result = prime * result + ((sourceAddr == null) ? 0 : sourceAddr.hashCode());
-		result = prime * result + sourcePort;
+		result = prime * result + originalPid;
 		return result;
 	}
 
@@ -125,21 +127,8 @@ public class Message implements Serializable {
 		Message other = (Message) obj;
 		if (msgId != other.msgId)
 			return false;
-		if (sourceAddr == null) {
-			if (other.sourceAddr != null)
-				return false;
-		} else if (!sourceAddr.equals(other.sourceAddr))
-			return false;
-		if (destAddr == null) {
-			if (other.destAddr != null)
-				return false;
-		} else if (!destAddr.equals(other.destAddr))
-			return false;
-		if (sourcePort != other.sourcePort)
-			return false;
-		if (destPort != other.destPort)
+		if (originalPid != other.originalPid)
 			return false;
 		return true;
 	}
-	
 }

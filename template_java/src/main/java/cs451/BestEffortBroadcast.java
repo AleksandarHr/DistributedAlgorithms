@@ -12,11 +12,10 @@ public class BestEffortBroadcast {
 		this.process = p;
 	}
 	
-	public void bebBroadcast(String content, int msgId) {
+	public void bebBroadcast(String content, int msgId, int pid) {
 		ArrayList<InetSocketAddress> allProcesses = this.process.getAllProcesses();
 		for (InetSocketAddress addr : allProcesses) {
-			Message m = new Message(content, msgId, addr.getPort(), addr.getAddress(), this.process.getProcessPort(), this.process.getProcessAddress(), false);
-			System.out.println("BEB to " + addr.getPort());
+			Message m = new Message(content, msgId, pid, addr.getPort(), addr.getAddress(), this.process.getProcessPort(), this.process.getProcessAddress(), false);
 			this.process.sendP2PMessage(m, addr.getAddress(), addr.getPort());
 		}
 	}

@@ -7,6 +7,7 @@ import java.io.ObjectInputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.SocketException;
 
 public class Listener extends Thread {
@@ -33,17 +34,19 @@ public class Listener extends Thread {
 				socket.receive(receivedPacket);
 				InetAddress senderIp = receivedPacket.getAddress();
 				int senderPort = receivedPacket.getPort();
+				InetSocketAddress senderAddr = new InetSocketAddress(senderIp, senderPort);
+				int senderPid = this.process.getAddressesAndPids().get(senderAddr);
 				Message msg = getMessageObjectFromByteArray(receivedPacket.getData());
 				
 				if (msg != null) {
 					if (msg.isAck()) {
-						System.out.println("Receiving an ACK from " + senderPort);
+						System.out.println("Receiving an ACK for message with ID = " + msg.getMsgId() + " from process = " + senderPid);
 						this.handleAckMessage(msg);
 					} else if (msg.isBroadcastMessage()){
 						System.out.println("Receiving a BROADCAST from " + senderPort);
 						this.handleBroadcastMessage(msg, senderIp, senderPort, this.process.getBeb());
 					} else {
-						System.out.println("Receiving a NORMAL MESSAGE from " + senderPort);
+						System.out.println("Receiving a MESSAGE with ID = " + msg.getMsgId() + " sent by process = " + msg.getOriginalPid());
 						this.handleRegularMessage(msg, senderIp, senderPort, this.process.getBeb());
 					}
 				}
@@ -104,7 +107,7 @@ public class Listener extends Thread {
 		beb.bebDeliver(msg);
 		
 		// Send an ack for the message to the sender
-		System.out.println("SENDING AN ACK to " + port);
+		System.out.println("Sending an ACK for message with ID = " + msg.getMsgId() + " to process with ID = " + msg.getOriginalPid());
 		Message ack = new Message(msg);
 		this.process.sendP2PMessage(ack, ip, port);
 	}

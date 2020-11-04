@@ -8,6 +8,8 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class Main {
 
@@ -39,6 +41,7 @@ public class Main {
         System.out.println("My PID is " + pid + ".");
         System.out.println("Use 'kill -SIGINT " + pid + " ' or 'kill -SIGTERM " + pid + " ' to stop processing packets.");
         ArrayList<InetSocketAddress> addresses = new ArrayList<InetSocketAddress>();
+        HashMap<InetSocketAddress, Integer> addressesAndPids = new HashMap<InetSocketAddress, Integer>();
         System.out.println("My id is " + parser.myId() + ".");
         System.out.println("List of hosts is:");
         Process p = null;
@@ -46,6 +49,7 @@ public class Main {
     		System.out.println(host.getId() + ", " + host.getIp() + ", " + host.getPort());
         	InetSocketAddress addr = new InetSocketAddress(InetAddress.getByName(host.getIp()), host.getPort());
         	addresses.add(addr);
+        	addressesAndPids.put(addr, host.getId());
     		if (host.getId() == parser.myId()) {
     			System.out.println("It's me!!");
         		p = new Process(InetAddress.getByName(host.getIp()), host.getPort(), host.getId());
@@ -68,10 +72,13 @@ public class Main {
 
         System.out.println("Broadcasting messages...");
         p.setAllProcesses(addresses);
+        p.setAddressesAndPids(addressesAndPids);
 
         if (parser.myId() == 1) {
-        	System.out.println("Process " + parser.myId() + " broadcasting message \"Hello\"");
-        	p.getBeb().bebBroadcast("Hello", 1);
+        	for (int i = 1; i <= 10; i++) {
+        		System.out.println("BEB message with ID = " + i);
+        		p.getBeb().bebBroadcast("Hello " + i, i, parser.myId());
+        	}
         }
         System.out.println("Signaling end of broadcasting messages");
         coordinator.finishedBroadcasting();
