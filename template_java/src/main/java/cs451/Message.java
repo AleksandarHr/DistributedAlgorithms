@@ -15,7 +15,7 @@ public class Message implements Serializable {
 	private InetAddress sourceAddr;
 	
 	private boolean isAck;
-	private boolean isBroadcastMessage;
+	private boolean isRebroadcastMessage;
 	
 	private int msgId;
 	private int originalPid;
@@ -32,11 +32,22 @@ public class Message implements Serializable {
 		this.originalPid = originalMessage.getOriginalPid();
 	}
 	
+	public Message(Message originalMessage, boolean isRebroadcast) {
+		this.isRebroadcastMessage = isRebroadcast;
+		this.msgId = originalMessage.getMsgId();
+		this.destPort = originalMessage.getDestPort();
+		this.destAddr = originalMessage.getDestAddr();
+		this.sourcePort = originalMessage.getSourcePort();
+		this.sourceAddr = originalMessage.getSourceAddr();
+		this.originalPid = originalMessage.getOriginalPid();
+		
+	}
+	
 	// Message constructor - creates a message object with provided string content, dest/source port/addr
 	// and makes it a broadcast message if specified
 	public Message(String content, int msgId, int senderPid, int destPort, InetAddress destAddr, int sourcePort, InetAddress sourceAddr, boolean isBroadcast) {
 		this.isAck = false;
-		this.isBroadcastMessage = isBroadcast;
+		this.isRebroadcastMessage = isBroadcast;
 		this.content = content;
 		this.msgId = msgId;
 		this.originalPid = senderPid;
@@ -94,11 +105,11 @@ public class Message implements Serializable {
 	public void setOriginalPid(int originalPid) {
 		this.originalPid = originalPid;
 	}
-	public boolean isBroadcastMessage() {
-		return this.isBroadcastMessage;
+	public boolean isRebroadcastMessage() {
+		return this.isRebroadcastMessage;
 	}
-	public void setIsBroadcastMessage(boolean isBcast) {
-		this.isBroadcastMessage = isBcast;
+	public void setIsRebroadcastMessage(boolean isBcast) {
+		this.isRebroadcastMessage = isBcast;
 	}
 	public int getMsgId() {
 		return msgId;

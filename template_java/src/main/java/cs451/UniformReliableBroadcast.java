@@ -3,7 +3,7 @@ package cs451;
 import java.net.InetSocketAddress;
 import java.util.HashSet;
 import java.util.LinkedList;
-import java.util.List;
+import java.util.List;import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -13,7 +13,6 @@ public class UniformReliableBroadcast {
 	private Process process;
 	private BestEffortBroadcast beb;
 	private ConcurrentHashMap<Message, Set<InetSocketAddress>> acks;
-	private int processesCount;
 	
 	private ConcurrentHashMap<Message, AtomicInteger> delivered;
 	private ConcurrentHashMap<Message, AtomicInteger> forward;
@@ -24,8 +23,6 @@ public class UniformReliableBroadcast {
 		this.acks = new ConcurrentHashMap<Message, Set<InetSocketAddress>>();
 		this.delivered = new ConcurrentHashMap<Message, AtomicInteger>();
 		this.forward = new ConcurrentHashMap<Message, AtomicInteger>();
-		
-		this.processesCount = this.process.getAllProcesses().size();
 	}
 
 	public void urbBroadcast(String content, int msgId) {
@@ -33,19 +30,28 @@ public class UniformReliableBroadcast {
 	}
 	
 	public boolean urbDeliver(Message msg, InetSocketAddress source) {
-		// if we still haven't delivered this message
-		if (this.beb.bebDeliver(msg)) {
-			Set<InetSocketAddress> currentAcks = this.acks.getOrDefault(msg, new HashSet<InetSocketAddress>());
-			currentAcks.add(source);
-			this.acks.put(msg, currentAcks);
-			
-			if (!this.forward.contains(msg)) {
-				this.forward.put(msg, new AtomicInteger(1));
-				this.beb.bebBroadcast(msg);
+		this.beb.bebDeliver(msg);
+		
+		Set<InetSocketAddress> currentAcks = this.acks.getOrDefault(msg, new HashSet<InetSocketAddress>());
+		// add ourselves to the set of processes which have acked this message
+//		currentAcks.add(new InetSocketAddress(this.process.getProcessAddress(), this.process.getProcessPort()));
+		// add the source of the message to the set of processes which have acked this message
+		currentAcks.add(source);
+		this.acks.put(msg, currentAcks);
+		
+		if (!this.forward.containsKey(msg)) {
+			this.forward.put(msg, new AtomicInteger(1));
+			if (msg.getOriginalPid() != this.process.getProcessId()) {
+				Message rebroadcastMsg = new Message(msg, true);
+//				System.out.println("REBROADCAST");
+				this.beb.bebBroadcast(rebroadcastMsg);
 			}
 		}
-		if (this.forward.contains(msg)) {
-			if (!this.delivered.contains(msg) && this.shouldDeliver(msg)) {
+
+		if (this.forward.containsKey(msg)) {
+//			System.out.println("will check if SHOULD urb deliver msg " + msg.getMsgId() + " :: from process " + msg.getOriginalPid());
+			if (!this.delivered.containsKey(msg) && this.shouldDeliver(msg)) {
+				System.out.println("DELIVER msg " + msg.getMsgId() + " from " + msg.getOriginalPid() + " having MAJORITY of " + this.acks.get(msg).size());
 				this.delivered.put(msg, new AtomicInteger(1));
 				return true;
 			}
@@ -53,36 +59,14 @@ public class UniformReliableBroadcast {
 		return false;
 	}
 	
-	
 	private boolean shouldDeliver(Message msg) {
-		int ackCount = this.acks.getOrDefault(msg, new HashSet<InetSocketAddress>()).size();
-		return ackCount > (this.processesCount/2);
-	}
-	
-//	public void urbBroadcast(Message m) {
-//		this.beb.bebBroadcast(m);
-//	}
-//
-//	public void urbDeliver(Message m, InetSocketAddress source) {
-//		if (!this.acknowledgmentsAddresses.containsKey(m)) {
-//			// if this is the first acknowledgement for the given message
-//			List<InetSocketAddress> addresses = new LinkedList<InetSocketAddress>();
-//			addresses.add(source);
-//			this.acknowledgmentsAddresses.put(m, addresses);
-//		} else {
-//			// if we have received acknowledgements for the given message before
-//			List<InetSocketAddress> currentAddresses = this.acknowledgmentsAddresses.get(m);
-//			if (!currentAddresses.contains(source)) {
-//				// if we have not received an acknowledgment for this message from this source
-//				if (currentAddresses.size() + 1 > (this.processesCount / 2)) {
-//					// we have majority acks -- bebDeliver
-//					this.beb.bebDeliver(m);
-//				} else {
-//					// we don't have majority acks yet -- update hashmap
-//					currentAddresses.add(source);
-//					this.acknowledgmentsAddresses.put(m, currentAddresses);
-//				}
-//			}
+		Set<InetSocketAddress> currAcks = this.acks.getOrDefault(msg, new HashSet<InetSocketAddress>());
+//		for (InetSocketAddress addr : currAcks) {
+//			System.out.println("ACKED FROM = " + addr.getAddress() + ":" + addr.getPort());
 //		}
-//	}
+		int ackCount = currAcks.size();
+		int processesCount = this.process.getAllProcesses().size();
+//		System.out.println("PROCESS count = " + processesCount + " :: ACK count = " + ackCount);
+		return ackCount > (processesCount/2);
+	}
 }

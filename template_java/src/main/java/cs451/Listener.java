@@ -38,14 +38,10 @@ public class Listener extends Thread {
 				
 				if (msg != null) {
 					if (msg.isAck()) {
-						System.out.println("Receiving an ACK for message with ID = " + msg.getMsgId() + " from process = " + senderPid);
+//						System.out.println("ACK for message with ID = " + msg.getMsgId() + " from process = " + senderPid);
 						this.handleAckMessage(msg);
-					} else if (msg.isBroadcastMessage()){
-						System.out.println("Receiving a BROADCAST from " + senderPort);
-						this.handleBroadcastMessage(msg, senderIp, senderPort, this.process.getBeb());
 					} else {
-						System.out.println("Receiving a MESSAGE with ID = " + msg.getMsgId() + " sent by process = " + msg.getOriginalPid());
-						this.handleRegularMessage(msg, senderIp, senderPort, this.process.getBeb());
+						this.handleRegularMessage(msg, senderIp, senderPort, this.process.getUrb());
 					}
 				}
 				
@@ -81,18 +77,6 @@ public class Listener extends Thread {
 	/*
 	 * 
 	 */
-	private void handleBroadcastMessage(Message msg, InetAddress ip, int port, BestEffortBroadcast beb) {
-		// Deliver the message, if not previously delivered
-		beb.bebDeliver(msg);
-	
-		// Send an ack for the message to the sender
-		Message ack = new Message(msg);
-		this.process.sendP2PMessage(ack, ip, port);
-	}
-	
-	/*
-	 * 
-	 */
 	private void handleAckMessage(Message msg) {
 		this.process.addAcknowledgement(msg);
 	}
@@ -100,13 +84,16 @@ public class Listener extends Thread {
 	/*
 	 * 
 	 */
-	private void handleRegularMessage(Message msg, InetAddress ip, int port, BestEffortBroadcast beb) {
-		// Deliver the message, if not previously delivered
-		beb.bebDeliver(msg);
+	private void handleRegularMessage(Message msg, InetAddress ip, int port, UniformReliableBroadcast urb) {
+		if (msg.isRebroadcastMessage()) {
+			Message ack = new Message(msg);
+			this.process.sendP2PMessage(ack, ip, port);
+			this.process.addAcknowledgement(msg);
+//			System.out.println("REBROADCAST from " + port + " with ID = " + msg.getMsgId() + " originally by = " + msg.getOriginalPid());
+		} else {
+//			System.out.println("MESSAGE from " + port + " with ID = " + msg.getMsgId() + " originally by = " + msg.getOriginalPid());
+		}
 		
-		// Send an ack for the message to the sender
-		System.out.println("Sending an ACK for message with ID = " + msg.getMsgId() + " to process with ID = " + msg.getOriginalPid());
-		Message ack = new Message(msg);
-		this.process.sendP2PMessage(ack, ip, port);
+		urb.urbDeliver(msg, new InetSocketAddress(ip, port));
 	}
 }

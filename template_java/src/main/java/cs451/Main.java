@@ -74,10 +74,10 @@ public class Main {
         p.setAllProcesses(addresses);
         p.setAddressesAndPids(addressesAndPids);
 
-        if (parser.myId() == 1) {
+        if (parser.myId() == 1 || parser.myId() == 2) {
         	for (int i = 1; i <= 10; i++) {
-        		System.out.println("BEB message with ID = " + i);
-        		p.getBeb().bebBroadcast("Hello " + i, i);
+        		System.out.println("URB message with ID = " + i);
+        		p.getUrb().urbBroadcast("Hello " + i, i);
         	}
         }
         System.out.println("Signaling end of broadcasting messages");
