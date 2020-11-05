@@ -78,8 +78,8 @@ public class Main {
         p.setAddressesToPids(addressesToPids);
         p.setPidsToAddresses(pidsToAddresses);
         
-        if (parser.myId() == 1 || parser.myId() == 2) {
-        	for (int i = 1; i <= 10; i++) {
+        if (parser.myId() == 1) {
+        	for (int i = 1; i <= 2; i++) {
         		System.out.println("URB message with ID = " + i);
         		p.getUrb().urbBroadcast("Hello " + i, i);
         	}

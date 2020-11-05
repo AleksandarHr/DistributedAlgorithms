@@ -12,7 +12,7 @@ public class UniformReliableBroadcast {
 
 	private Process process;
 	private BestEffortBroadcast beb;
-	private ConcurrentHashMap<Message, Set<InetSocketAddress>> acks;
+//	private ConcurrentHashMap<Message, Set<InetSocketAddress>> acks;
 	
 	private ConcurrentHashMap<Message, AtomicInteger> delivered;
 	private ConcurrentHashMap<Message, AtomicInteger> forward;
@@ -20,7 +20,6 @@ public class UniformReliableBroadcast {
 	public UniformReliableBroadcast(BestEffortBroadcast beb) {
 		this.process = beb.getProcess();
 		this.beb = beb;
-		this.acks = new ConcurrentHashMap<Message, Set<InetSocketAddress>>();
 		this.delivered = new ConcurrentHashMap<Message, AtomicInteger>();
 		this.forward = new ConcurrentHashMap<Message, AtomicInteger>();
 	}
@@ -32,12 +31,12 @@ public class UniformReliableBroadcast {
 	public boolean urbDeliver(Message msg, InetSocketAddress source) {
 		this.beb.bebDeliver(msg);
 		
-		Set<InetSocketAddress> currentAcks = this.acks.getOrDefault(msg, new HashSet<InetSocketAddress>());
-		// add ourselves to the set of processes which have acked this message
-//		currentAcks.add(new InetSocketAddress(this.process.getProcessAddress(), this.process.getProcessPort()));
-		// add the source of the message to the set of processes which have acked this message
-		currentAcks.add(source);
-		this.acks.put(msg, currentAcks);
+//		Set<InetSocketAddress> currentAcks = this.acks.getOrDefault(msg, new HashSet<InetSocketAddress>());
+//		// add ourselves to the set of processes which have acked this message
+////		currentAcks.add(new InetSocketAddress(this.process.getProcessAddress(), this.process.getProcessPort()));
+//		// add the source of the message to the set of processes which have acked this message
+//		currentAcks.add(source);
+//		this.acks.put(msg, currentAcks);
 		
 		if (!this.forward.containsKey(msg)) {
 			this.forward.put(msg, new AtomicInteger(1));
@@ -51,7 +50,7 @@ public class UniformReliableBroadcast {
 		if (this.forward.containsKey(msg)) {
 //			System.out.println("will check if SHOULD urb deliver msg " + msg.getMsgId() + " :: from process " + msg.getOriginalPid());
 			if (!this.delivered.containsKey(msg) && this.shouldDeliver(msg)) {
-				System.out.println("DELIVER msg " + msg.getMsgId() + " from " + msg.getOriginalPid() + " having MAJORITY of " + this.acks.get(msg).size());
+				System.out.println("DELIVER msg " + msg.getMsgId() + " from " + msg.getOriginalPid() + " having MAJORITY of " + this.process.ackerCount(msg));
 				this.delivered.put(msg, new AtomicInteger(1));
 				return true;
 			}
@@ -60,11 +59,7 @@ public class UniformReliableBroadcast {
 	}
 	
 	private boolean shouldDeliver(Message msg) {
-		Set<InetSocketAddress> currAcks = this.acks.getOrDefault(msg, new HashSet<InetSocketAddress>());
-//		for (InetSocketAddress addr : currAcks) {
-//			System.out.println("ACKED FROM = " + addr.getAddress() + ":" + addr.getPort());
-//		}
-		int ackCount = currAcks.size();
+		int ackCount = this.process.ackerCount(msg);
 		int processesCount = this.process.getAllProcesses().size();
 //		System.out.println("PROCESS count = " + processesCount + " :: ACK count = " + ackCount);
 		return ackCount > (processesCount/2);

@@ -8,7 +8,9 @@ import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class Process {
@@ -37,8 +39,9 @@ public class Process {
 	private volatile ConcurrentHashMap<Message, Boolean> delivered;
 	
 	// hashmap of this process' messages which have been acknowledged
-	private volatile ConcurrentHashMap<Message, Boolean> acknowledged;
-	
+//	private volatile ConcurrentHashMap<Message, Boolean> acknowledged;
+	private ConcurrentHashMap<Message, Set<InetSocketAddress>> acks;
+
 	DatagramPacket packet = null;
 
 	private BestEffortBroadcast beb;
@@ -58,7 +61,7 @@ public class Process {
 		}
 		
 		this.delivered = new ConcurrentHashMap<Message, Boolean>();
-		this.acknowledged = new ConcurrentHashMap<Message, Boolean>();
+		this.acks = new ConcurrentHashMap<Message, Set<InetSocketAddress>>();
 
 		this.listener = new Listener(this);
 		System.out.println("Opening listener thread");
@@ -85,12 +88,23 @@ public class Process {
 		return this.delivered.containsKey(msg);
 	}
 	
-	public boolean hasBeenAcknowledged(Message msg) {
-		return this.acknowledged.containsKey(msg);
+	public boolean hasBeenAcknowledged(Message msg, InetSocketAddress acker) {
+		Set<InetSocketAddress> currentAcks = this.acks.getOrDefault(msg, new HashSet<InetSocketAddress>());
+		return currentAcks.contains(acker);
 	}
 	
-	public void addAcknowledgement(Message ack) {
-		this.acknowledged.put(ack, true);
+	public int ackerCount(Message msg) {
+		Set<InetSocketAddress> currentAcks = this.acks.getOrDefault(msg, new HashSet<InetSocketAddress>());
+		return currentAcks.size();
+	}
+	
+	public void addAcknowledgement(Message ack, InetSocketAddress acker) {
+		Set<InetSocketAddress> currentAcks = this.acks.getOrDefault(ack, new HashSet<InetSocketAddress>());
+		// add ourselves to the set of processes which have acked this message
+//		currentAcks.add(new InetSocketAddress(this.process.getProcessAddress(), this.process.getProcessPort()));
+		// add the source of the message to the set of processes which have acked this message
+		currentAcks.add(acker);
+		this.acks.put(ack, currentAcks);
 	}
 	
 	public void setAllProcesses(ArrayList<InetSocketAddress> processes) {

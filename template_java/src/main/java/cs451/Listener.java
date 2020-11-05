@@ -39,7 +39,7 @@ public class Listener extends Thread {
 				if (msg != null) {
 					if (msg.isAck()) {
 //						System.out.println("ACK for message with ID = " + msg.getMsgId() + " from process = " + senderPid);
-						this.handleAckMessage(msg);
+						this.handleAckMessage(msg, senderAddr);
 					} else {
 						this.handleRegularMessage(msg, senderIp, senderPort, this.process.getUrb());
 					}
@@ -77,18 +77,19 @@ public class Listener extends Thread {
 	/*
 	 * 
 	 */
-	private void handleAckMessage(Message msg) {
-		this.process.addAcknowledgement(msg);
+	private void handleAckMessage(Message msg, InetSocketAddress sender) {
+		this.process.addAcknowledgement(msg, sender);
 	}
 	
 	/*
 	 * 
 	 */
 	private void handleRegularMessage(Message msg, InetAddress ip, int port, UniformReliableBroadcast urb) {
-		if (msg.isRebroadcastMessage()) {
+		if (msg.isRebroadcastMessage() || msg.getOriginalPid() == this.process.getProcessId()) {
+			// Acknowledge rebroadcasts and messages sent to ourselves
 			Message ack = new Message(msg);
 			this.process.sendP2PMessage(ack, ip, port);
-			this.process.addAcknowledgement(msg);
+			this.process.addAcknowledgement(msg, new InetSocketAddress(ip, port));
 //			System.out.println("REBROADCAST from " + port + " with ID = " + msg.getMsgId() + " originally by = " + msg.getOriginalPid());
 		} else {
 //			System.out.println("MESSAGE from " + port + " with ID = " + msg.getMsgId() + " originally by = " + msg.getOriginalPid());

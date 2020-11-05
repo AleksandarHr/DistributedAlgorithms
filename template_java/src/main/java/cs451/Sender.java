@@ -6,6 +6,7 @@ import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.concurrent.TimeUnit;
 
 // Sender class is used to send a message to a single destination process
@@ -44,8 +45,10 @@ public class Sender extends Thread {
 				// send an acknowledgment message
 				processSocket.send(packetToSend);
 			} else {
+				InetSocketAddress destAddr = new InetSocketAddress(this.destinationIp, this.destinationPort);
 				// keep sending the message until we get an acknowledgment from the destination process
-				while(!this.process.hasBeenAcknowledged(toSend)) {
+				while(!this.process.hasBeenAcknowledged(toSend, destAddr)) {
+//					System.out.println("NO ACK yet - resend msg " + toSend.getMsgId() + " to process " + this.process.getAddressesToPids().get(destAddr));
 					processSocket.send(packetToSend);
 					TimeUnit.SECONDS.sleep(1);
 				}
