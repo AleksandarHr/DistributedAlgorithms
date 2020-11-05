@@ -41,7 +41,9 @@ public class Main {
         System.out.println("My PID is " + pid + ".");
         System.out.println("Use 'kill -SIGINT " + pid + " ' or 'kill -SIGTERM " + pid + " ' to stop processing packets.");
         ArrayList<InetSocketAddress> addresses = new ArrayList<InetSocketAddress>();
-        HashMap<InetSocketAddress, Integer> addressesAndPids = new HashMap<InetSocketAddress, Integer>();
+        HashMap<InetSocketAddress, Integer> addressesToPids = new HashMap<InetSocketAddress, Integer>();
+        HashMap<Integer, InetSocketAddress> pidsToAddresses = new HashMap<Integer, InetSocketAddress>();
+
         System.out.println("My id is " + parser.myId() + ".");
         System.out.println("List of hosts is:");
         Process p = null;
@@ -49,7 +51,8 @@ public class Main {
     		System.out.println(host.getId() + ", " + host.getIp() + ", " + host.getPort());
         	InetSocketAddress addr = new InetSocketAddress(InetAddress.getByName(host.getIp()), host.getPort());
         	addresses.add(addr);
-        	addressesAndPids.put(addr, host.getId());
+        	addressesToPids.put(addr, host.getId());
+        	pidsToAddresses.put(host.getId(), addr);
     		if (host.getId() == parser.myId()) {
     			System.out.println("It's me!!");
         		p = new Process(InetAddress.getByName(host.getIp()), host.getPort(), host.getId());
@@ -72,8 +75,9 @@ public class Main {
 
         System.out.println("Broadcasting messages...");
         p.setAllProcesses(addresses);
-        p.setAddressesAndPids(addressesAndPids);
-
+        p.setAddressesToPids(addressesToPids);
+        p.setPidsToAddresses(pidsToAddresses);
+        
         if (parser.myId() == 1 || parser.myId() == 2) {
         	for (int i = 1; i <= 10; i++) {
         		System.out.println("URB message with ID = " + i);

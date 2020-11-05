@@ -22,7 +22,8 @@ public class Process {
 	// Info from membership file - process id, list of all processes, broadcast count
 	private Integer pid;
 	private ArrayList<InetSocketAddress> allProcesses;
-    private HashMap<InetSocketAddress, Integer> addressesAndPids;
+    private HashMap<InetSocketAddress, Integer> addressesToPids;
+    private HashMap<Integer, InetSocketAddress> pidsToAddresses;
 	
 	// Listener object of the process
 	private Listener listener;
@@ -96,12 +97,20 @@ public class Process {
 		this.allProcesses = processes;
 	}
 	
-	public void setAddressesAndPids(HashMap<InetSocketAddress, Integer> procs) {
-		this.addressesAndPids = procs;
+	public void setAddressesToPids(HashMap<InetSocketAddress, Integer> procs) {
+		this.addressesToPids = procs;
 	}
 	
-	public HashMap<InetSocketAddress, Integer> getAddressesAndPids() {
-		return this.addressesAndPids;
+	public HashMap<InetSocketAddress, Integer> getAddressesToPids() {
+		return this.addressesToPids;
+	}
+
+	public void setPidsToAddresses(HashMap<Integer, InetSocketAddress> procs) {
+		this.pidsToAddresses = procs;
+	}
+	
+	public HashMap<Integer, InetSocketAddress> getPidsToAddresses() {
+		return this.pidsToAddresses;
 	}
 	
 	public ArrayList<InetSocketAddress> getAllProcesses() {
