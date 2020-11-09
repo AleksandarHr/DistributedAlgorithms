@@ -95,11 +95,11 @@ public class Process {
 	
 	public int ackerCount(Message msg) {
 		Set<InetSocketAddress> currentAcks = this.acks.getOrDefault(msg, new HashSet<InetSocketAddress>());
-		System.out.println("ENTRIES " + this.acks.size());
+//		System.out.println("ENTRIES " + this.acks.size());
 		for (Map.Entry<Message, Set<InetSocketAddress>> entry : this.acks.entrySet()) {
 //			System.out.println("ENTRY msg " + entry.getKey().getMsgId() + " vs. MSG " + msg.getMsgId() + " :: " + "ENTRY pid " + entry.getKey().getOriginalPid() + " vs. pid " + msg.getOriginalPid());
 			if (msg.getMsgId() == entry.getKey().getMsgId() && msg.getOriginalPid() == entry.getKey().getOriginalPid()) {
-				System.out.println(" WE HAVE A MATCH --> " + entry.getKey().equals(msg));
+//				System.out.println(" WE HAVE A MATCH --> " + entry.getKey().equals(msg));
 			}
 		}
 		return currentAcks.size();
@@ -108,7 +108,7 @@ public class Process {
 	public void addAcknowledgement(Message ack, InetSocketAddress acker) {
 		Set<InetSocketAddress> currentAcks = this.acks.getOrDefault(ack, new HashSet<InetSocketAddress>());
 		currentAcks.add(acker);
-		System.out.println("msg " + ack.getMsgId() + " has " + currentAcks.size() + " acks");
+//		System.out.println("msg " + ack.getMsgId() + " has " + currentAcks.size() + " acks");
 		this.acks.put(ack, currentAcks);
 	}
 	

@@ -39,6 +39,7 @@ public class UniformReliableBroadcast {
 
 		if (!this.forward.containsKey(msg)) {
 			this.forward.put(msg, new AtomicInteger(1));
+//			System.out.println("PUTTING " + msg.getMsgId() + " in forward :: I am " + this.process.getProcessId());
 			if (msg.getOriginalPid() != this.process.getProcessId()) {
 				Message rebroadcastMsg = new Message(msg, true);
 //				System.out.println("REBROADCAST msg " + msg.getMsgId());
