@@ -8,15 +8,12 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.SocketException;
 
 public class Listener extends Thread {
 	
 	private final int UDPPACKETSIZELIMIT = 65535;
 	
 	private Process process;
-	private InetAddress ip;
-	private Integer port;
 	private byte[] buffer = new byte[UDPPACKETSIZELIMIT];
 	DatagramPacket receivedPacket = null;
 	

@@ -4,15 +4,11 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.Scanner;
 
 public class Main {
@@ -93,11 +89,6 @@ public class Main {
         System.out.println("Barrier: " + parser.barrierIp() + ":" + parser.barrierPort());
         System.out.println("Signal: " + parser.signalIp() + ":" + parser.signalPort());
         System.out.println("Output: " + parser.output());
-        // if config is defined; always check before parser.config()
-//        if (parser.hasConfig()) {
-//            System.out.println("Config: " + parser.config());
-//        }
-
 
         Coordinator coordinator = new Coordinator(parser.myId(), parser.barrierIp(), parser.barrierPort(), parser.signalIp(), parser.signalPort());
 
@@ -108,25 +99,6 @@ public class Main {
         
         p.beginFifo();
         
-//    	for (int i = 2; i >= 1; i--) {
-//        	System.out.println("b " + i);
-//    		p.getFifo().fifoBroadcast("Hello " + i, i);
-//    	}
-//        for (int i = 3; i <= 4; i++) {
-//        	if (parser.myId() == 1) {
-//        		Thread.sleep(2 * 1000);
-//        	}
-//        	System.out.println("b " + i);
-//        	p.getFifo().fifoBroadcast("Hello " + i, i);
-//        }
-//        for (int i = 8; i >= 5; i--) {
-//        	if (parser.myId() == 2) {
-//        		Thread.sleep(2 * 1000);
-//        	}
-//        	System.out.println("b " + i);
-//        	p.getFifo().fifoBroadcast("Hello " + i, i);
-//        }
-
         System.out.println("Signaling end of broadcasting messages");
         coordinator.finishedBroadcasting();
 

@@ -1,10 +1,9 @@
 package cs451;
 
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.SortedSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class FirstInFirstOutBroadcast {
 	private Process process;
@@ -12,6 +11,7 @@ public class FirstInFirstOutBroadcast {
 	
 	// contains the number of messages received by respective pid (e.g. highest message id received)
 	private int[] vectorClock;
+	ReentrantLock vcLock = new ReentrantLock();
 	private ConcurrentHashMap<Integer, ConcurrentSkipListSet<Message>> pending;
 	
 	public FirstInFirstOutBroadcast(UniformReliableBroadcast urb) {
@@ -57,27 +57,32 @@ public class FirstInFirstOutBroadcast {
 			int pid = msg.getOriginalPid();
 			ConcurrentSkipListSet<Message> relevantPending = this.pending.get(pid);
 			// check vector clock - should we try to deliver this message?
-			if (msg.getMsgId() == (this.vectorClock[pid-1] + 1)) {
-				this.vectorClock[pid-1]++;
-				this.process.addToOutput("d " + msg.getOriginalPid() + " " + msg.getMsgId());
-				// if this is a message we are expecting, go over pending and try to urbDeliver
-				// messages from the same source
-				ConcurrentSkipListSet<Message> tempPending = new ConcurrentSkipListSet<Message>(relevantPending);
-				for (Message m : relevantPending) {
-					if (m.getMsgId() == (this.vectorClock[pid-1]+1)) {
-						// if we successfully delivered message, update vector clock
-						this.vectorClock[pid - 1] = this.vectorClock[pid-1] + 1;
-						// and remove message from pending
-						tempPending.remove(m);
-						this.process.addToOutput("d " + m.getOriginalPid() + " " + m.getMsgId());
-					} else {
-						break;
+			this.vcLock.lock();
+			try {
+				if (msg.getMsgId() == (this.vectorClock[pid-1] + 1)) {
+					this.vectorClock[pid-1]++;
+					this.process.addToOutput("d " + msg.getOriginalPid() + " " + msg.getMsgId());
+					// if this is a message we are expecting, go over pending and try to urbDeliver
+					// messages from the same source
+					ConcurrentSkipListSet<Message> tempPending = new ConcurrentSkipListSet<Message>(relevantPending);
+					for (Message m : relevantPending) {
+						if (m.getMsgId() == (this.vectorClock[pid-1]+1)) {
+							// if we successfully delivered message, update vector clock
+							this.vectorClock[pid - 1] = this.vectorClock[pid-1] + 1;
+							// and remove message from pending
+							tempPending.remove(m);
+							this.process.addToOutput("d " + m.getOriginalPid() + " " + m.getMsgId());
+						} else {
+							break;
+						}
 					}
+					this.pending.put(pid, tempPending);
+				} else {
+					relevantPending.add(msg);
+					this.pending.put(pid, relevantPending);
 				}
-				this.pending.put(pid, tempPending);
-			} else {
-				relevantPending.add(msg);
-				this.pending.put(pid, relevantPending);
+			} finally {
+				this.vcLock.unlock();
 			}
 		}			
 	}

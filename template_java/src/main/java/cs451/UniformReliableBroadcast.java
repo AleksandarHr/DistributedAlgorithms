@@ -1,10 +1,6 @@
 package cs451;
 
 import java.net.InetSocketAddress;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -34,8 +30,7 @@ public class UniformReliableBroadcast {
 		if (!this.forward.containsKey(msg)) {
 			this.forward.put(msg, new AtomicInteger(1));
 			if (msg.getOriginalPid() != this.process.getProcessId()) {
-				Message rebroadcastMsg = new Message(msg);
-				this.beb.bebBroadcast(rebroadcastMsg);
+				this.beb.bebBroadcast(msg);
 			}
 		}
 
