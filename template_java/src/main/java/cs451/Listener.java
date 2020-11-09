@@ -33,7 +33,6 @@ public class Listener extends Thread {
 				InetAddress senderIp = receivedPacket.getAddress();
 				int senderPort = receivedPacket.getPort();
 				InetSocketAddress senderAddr = new InetSocketAddress(senderIp, senderPort);
-				int senderPid = this.process.getAddressesToPids().get(senderAddr);
 				Message msg = getMessageObjectFromByteArray(receivedPacket.getData());
 				
 				if (msg != null) {

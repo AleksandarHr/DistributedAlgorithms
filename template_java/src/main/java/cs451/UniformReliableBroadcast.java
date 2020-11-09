@@ -23,33 +23,24 @@ public class UniformReliableBroadcast {
 		this.forward = new ConcurrentHashMap<Message, AtomicInteger>();
 	}
 
-	public void urbBroadcast(String content, int msgId) {
-		this.beb.bebBroadcast(content, msgId);
+	public void urbBroadcast(int msgId) {
+		this.beb.bebBroadcast(msgId);
 	}
 	
 	public boolean urbDeliver(Message msg, InetSocketAddress source) {
 		this.beb.bebDeliver(msg);
-		
-//		Set<InetSocketAddress> currentAcks = this.acks.getOrDefault(msg, new HashSet<InetSocketAddress>());
-//		// add ourselves to the set of processes which have acked this message
-////		currentAcks.add(new InetSocketAddress(this.process.getProcessAddress(), this.process.getProcessPort()));
-//		// add the source of the message to the set of processes which have acked this message
-//		currentAcks.add(source);
-//		this.acks.put(msg, currentAcks);
+		// add the source of the message to the set of processes which have acked this message
 
 		if (!this.forward.containsKey(msg)) {
 			this.forward.put(msg, new AtomicInteger(1));
-//			System.out.println("PUTTING " + msg.getMsgId() + " in forward :: I am " + this.process.getProcessId());
 			if (msg.getOriginalPid() != this.process.getProcessId()) {
-				Message rebroadcastMsg = new Message(msg, true);
-//				System.out.println("REBROADCAST msg " + msg.getMsgId());
+				Message rebroadcastMsg = new Message(msg);
 				this.beb.bebBroadcast(rebroadcastMsg);
 			}
 		}
 
 		if (this.forward.containsKey(msg)) {
 			boolean shouldDeliver = this.shouldDeliver(msg);
-//			System.out.println("will check if SHOULD urb deliver msg " + msg.getMsgId() + " :: from process " + msg.getOriginalPid());
 			if (!this.delivered.containsKey(msg) && shouldDeliver) {
 //				System.out.println("URB deliver msg " + msg.getMsgId() + " from " + msg.getOriginalPid() + " having MAJORITY of " + this.process.ackerCount(msg));
 				this.delivered.put(msg, new AtomicInteger(1));

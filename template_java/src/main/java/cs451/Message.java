@@ -7,15 +7,13 @@ public class Message implements Serializable {
 
 	private static final long serialVersionUID = 14321532143L;
 
-	private String content;
-
 	private int destPort;
 	private int sourcePort;
 	private InetAddress destAddr;
 	private InetAddress sourceAddr;
 	
 	private boolean isAck;
-	private boolean isRebroadcastMessage;
+//	private boolean isRebroadcastMessage;
 	
 	private int msgId;
 	private int originalPid;
@@ -31,24 +29,11 @@ public class Message implements Serializable {
 		this.sourceAddr = originalMessage.getSourceAddr();
 		this.originalPid = originalMessage.getOriginalPid();
 	}
-	
-	public Message(Message originalMessage, boolean isRebroadcast) {
-		this.isRebroadcastMessage = isRebroadcast;
-		this.msgId = originalMessage.getMsgId();
-		this.destPort = originalMessage.getDestPort();
-		this.destAddr = originalMessage.getDestAddr();
-		this.sourcePort = originalMessage.getSourcePort();
-		this.sourceAddr = originalMessage.getSourceAddr();
-		this.originalPid = originalMessage.getOriginalPid();
 		
-	}
-	
 	// Message constructor - creates a message object with provided string content, dest/source port/addr
 	// and makes it a broadcast message if specified
-	public Message(String content, int msgId, int senderPid, int destPort, InetAddress destAddr, int sourcePort, InetAddress sourceAddr, boolean isBroadcast) {
+	public Message(int msgId, int senderPid, int destPort, InetAddress destAddr, int sourcePort, InetAddress sourceAddr) {
 		this.isAck = false;
-		this.isRebroadcastMessage = isBroadcast;
-		this.content = content;
 		this.msgId = msgId;
 		this.originalPid = senderPid;
 		this.destPort = destPort;
@@ -56,25 +41,7 @@ public class Message implements Serializable {
 		this.sourcePort = sourcePort;
 		this.sourceAddr = sourceAddr;
 	}
-	
-//	public Message(String content, int destPort, int sourcePort, InetAddress destAddr, InetAddress sourceAddr,
-//			int msgId, int senderId) {
-//		super();
-//		this.content = content;
-//		this.destPort = destPort;
-//		this.sourcePort = sourcePort;
-//		this.destAddr = destAddr;
-//		this.sourceAddr = sourceAddr;
-//		this.msgId = msgId;
-//		this.senderId = senderId;
-//	}
-	
-	public String getContent() {
-		return content;
-	}
-	public void setContent(String content) {
-		this.content = content;
-	}
+
 	public int getDestPort() {
 		return destPort;
 	}
@@ -104,12 +71,6 @@ public class Message implements Serializable {
 	}
 	public void setOriginalPid(int originalPid) {
 		this.originalPid = originalPid;
-	}
-	public boolean isRebroadcastMessage() {
-		return this.isRebroadcastMessage;
-	}
-	public void setIsRebroadcastMessage(boolean isBcast) {
-		this.isRebroadcastMessage = isBcast;
 	}
 	public int getMsgId() {
 		return msgId;

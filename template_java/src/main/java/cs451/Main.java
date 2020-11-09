@@ -87,8 +87,6 @@ public class Main {
         	}
         }
         p.setAllProcesses(addresses);
-        p.setAddressesToPids(addressesToPids);
-        p.setPidsToAddresses(pidsToAddresses);
         
         initSignalHandlers(parser, p);
         

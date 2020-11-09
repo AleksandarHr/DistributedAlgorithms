@@ -12,12 +12,11 @@ public class BestEffortBroadcast {
 		this.process = p;
 	}
 	
-	public void bebBroadcast(String content, int msgId) {
+	public void bebBroadcast(int msgId) {
 		ArrayList<InetSocketAddress> allProcesses = this.process.getAllProcesses();
 		System.out.println("b " + msgId);
-		this.process.addToOutput("b " + msgId);
 		for (InetSocketAddress addr : allProcesses) {
-			Message m = new Message(content, msgId, this.process.getProcessId(), addr.getPort(), addr.getAddress(), this.process.getProcessPort(), this.process.getProcessAddress(), false);
+			Message m = new Message(msgId, this.process.getProcessId(), addr.getPort(), addr.getAddress(), this.process.getProcessPort(), this.process.getProcessAddress());
 			this.process.sendP2PMessage(m, addr.getAddress(), addr.getPort());
 		}
 	}
@@ -29,9 +28,7 @@ public class BestEffortBroadcast {
 	}
 	
 	public boolean bebDeliver(Message msg) {
-		// only deliver message if it has not been yet delivered - underlying perfect links abstraction
-		// already takes care of that
-		return this.process.addDelieveredMessage(msg);
+		return true;
 	}
 	
 	public Process getProcess() {
