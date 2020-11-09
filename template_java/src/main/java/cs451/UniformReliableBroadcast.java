@@ -12,7 +12,6 @@ public class UniformReliableBroadcast {
 
 	private Process process;
 	private BestEffortBroadcast beb;
-//	private ConcurrentHashMap<Message, Set<InetSocketAddress>> acks;
 	
 	private ConcurrentHashMap<Message, AtomicInteger> delivered;
 	private ConcurrentHashMap<Message, AtomicInteger> forward;
@@ -37,20 +36,21 @@ public class UniformReliableBroadcast {
 //		// add the source of the message to the set of processes which have acked this message
 //		currentAcks.add(source);
 //		this.acks.put(msg, currentAcks);
-		
+
 		if (!this.forward.containsKey(msg)) {
 			this.forward.put(msg, new AtomicInteger(1));
 			if (msg.getOriginalPid() != this.process.getProcessId()) {
 				Message rebroadcastMsg = new Message(msg, true);
-//				System.out.println("REBROADCAST");
+//				System.out.println("REBROADCAST msg " + msg.getMsgId());
 				this.beb.bebBroadcast(rebroadcastMsg);
 			}
 		}
 
 		if (this.forward.containsKey(msg)) {
+			boolean shouldDeliver = this.shouldDeliver(msg);
 //			System.out.println("will check if SHOULD urb deliver msg " + msg.getMsgId() + " :: from process " + msg.getOriginalPid());
-			if (!this.delivered.containsKey(msg) && this.shouldDeliver(msg)) {
-				System.out.println("DELIVER msg " + msg.getMsgId() + " from " + msg.getOriginalPid() + " having MAJORITY of " + this.process.ackerCount(msg));
+			if (!this.delivered.containsKey(msg) && shouldDeliver) {
+				System.out.println("URB deliver msg " + msg.getMsgId() + " from " + msg.getOriginalPid() + " having MAJORITY of " + this.process.ackerCount(msg));
 				this.delivered.put(msg, new AtomicInteger(1));
 				return true;
 			}
@@ -61,7 +61,10 @@ public class UniformReliableBroadcast {
 	private boolean shouldDeliver(Message msg) {
 		int ackCount = this.process.ackerCount(msg);
 		int processesCount = this.process.getAllProcesses().size();
-//		System.out.println("PROCESS count = " + processesCount + " :: ACK count = " + ackCount);
 		return ackCount > (processesCount/2);
+	}
+	
+	public Process getProcess() {
+		return this.process;
 	}
 }

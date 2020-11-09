@@ -79,11 +79,17 @@ public class Main {
         p.setPidsToAddresses(pidsToAddresses);
         
         if (parser.myId() == 1) {
-        	for (int i = 1; i <= 2; i++) {
-        		System.out.println("URB message with ID = " + i);
-        		p.getUrb().urbBroadcast("Hello " + i, i);
+    	for (int i = 2; i >= 1; i--) {
+    		p.getUrb().urbBroadcast("Hello " + i, i);
+    	}
+        for (int i = 3; i <= 4; i++) {
+        	if (parser.myId() == 1) {
+        		Thread.sleep(2 * 1000);
         	}
+        	p.getUrb().urbBroadcast("Hello " + i, i);
         }
+        }
+
         System.out.println("Signaling end of broadcasting messages");
         coordinator.finishedBroadcasting();
 

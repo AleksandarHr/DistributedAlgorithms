@@ -44,6 +44,7 @@ public class Sender extends Thread {
 			if (toSend.isAck()) {
 				// send an acknowledgment message
 				processSocket.send(packetToSend);
+//				System.out.println("SENDING ACK for msg " + toSend.getMsgId() + " to " + this.process.getPidFromAddres(new InetSocketAddress(this.destinationIp, this.destinationPort)));
 			} else {
 				InetSocketAddress destAddr = new InetSocketAddress(this.destinationIp, this.destinationPort);
 				// keep sending the message until we get an acknowledgment from the destination process

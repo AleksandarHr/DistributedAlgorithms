@@ -29,8 +29,6 @@ public class Process {
 	
 	// Listener object of the process
 	private Listener listener;
-	// Sender object of the process
-	private Sender sender;
 	
 	// Message ID counter for messages of this processes
 	static Integer msgId;
@@ -40,12 +38,13 @@ public class Process {
 	
 	// hashmap of this process' messages which have been acknowledged
 //	private volatile ConcurrentHashMap<Message, Boolean> acknowledged;
-	private ConcurrentHashMap<Message, Set<InetSocketAddress>> acks;
+	private volatile ConcurrentHashMap<Message, Set<InetSocketAddress>> acks;
 
 	DatagramPacket packet = null;
 
 	private BestEffortBroadcast beb;
 	private UniformReliableBroadcast urb;
+	private FirstInFirstOutBroadcast fifo;
 	
 	public Process(InetAddress ip, int port, int pid) {
 		this.ip = ip;
@@ -68,6 +67,7 @@ public class Process {
 		this.listener.start();
 		this.beb = new BestEffortBroadcast(this);
 		this.urb = new UniformReliableBroadcast(this.beb);
+		this.fifo = new FirstInFirstOutBroadcast(this.urb);
 	}
 	
 	
@@ -95,15 +95,20 @@ public class Process {
 	
 	public int ackerCount(Message msg) {
 		Set<InetSocketAddress> currentAcks = this.acks.getOrDefault(msg, new HashSet<InetSocketAddress>());
+		System.out.println("ENTRIES " + this.acks.size());
+		for (Map.Entry<Message, Set<InetSocketAddress>> entry : this.acks.entrySet()) {
+//			System.out.println("ENTRY msg " + entry.getKey().getMsgId() + " vs. MSG " + msg.getMsgId() + " :: " + "ENTRY pid " + entry.getKey().getOriginalPid() + " vs. pid " + msg.getOriginalPid());
+			if (msg.getMsgId() == entry.getKey().getMsgId() && msg.getOriginalPid() == entry.getKey().getOriginalPid()) {
+				System.out.println(" WE HAVE A MATCH --> " + entry.getKey().equals(msg));
+			}
+		}
 		return currentAcks.size();
 	}
 	
 	public void addAcknowledgement(Message ack, InetSocketAddress acker) {
 		Set<InetSocketAddress> currentAcks = this.acks.getOrDefault(ack, new HashSet<InetSocketAddress>());
-		// add ourselves to the set of processes which have acked this message
-//		currentAcks.add(new InetSocketAddress(this.process.getProcessAddress(), this.process.getProcessPort()));
-		// add the source of the message to the set of processes which have acked this message
 		currentAcks.add(acker);
+		System.out.println("msg " + ack.getMsgId() + " has " + currentAcks.size() + " acks");
 		this.acks.put(ack, currentAcks);
 	}
 	
@@ -161,5 +166,13 @@ public class Process {
 	
 	public UniformReliableBroadcast getUrb() {
 		return this.urb;
+	}
+	
+	public FirstInFirstOutBroadcast getFifo() {
+		return this.fifo;
+	}
+	
+	public int getPidFromAddres(InetSocketAddress addr) {
+		return this.addressesToPids.get(addr);
 	}
 }
