@@ -79,19 +79,22 @@ public class Main {
         p.setPidsToAddresses(pidsToAddresses);
         
     	for (int i = 2; i >= 1; i--) {
-    		p.getUrb().urbBroadcast("Hello " + i, i);
+        	System.out.println("b " + i);
+    		p.getFifo().fifoBroadcast("Hello " + i, i);
     	}
         for (int i = 3; i <= 4; i++) {
         	if (parser.myId() == 1) {
         		Thread.sleep(2 * 1000);
         	}
-        	p.getUrb().urbBroadcast("Hello " + i, i);
+        	System.out.println("b " + i);
+        	p.getFifo().fifoBroadcast("Hello " + i, i);
         }
         for (int i = 8; i >= 5; i--) {
         	if (parser.myId() == 2) {
         		Thread.sleep(2 * 1000);
         	}
-        	p.getUrb().urbBroadcast("Hello " + i, i);
+        	System.out.println("b " + i);
+        	p.getFifo().fifoBroadcast("Hello " + i, i);
         }
 
         System.out.println("Signaling end of broadcasting messages");

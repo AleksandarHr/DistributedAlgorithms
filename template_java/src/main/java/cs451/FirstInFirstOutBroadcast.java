@@ -26,7 +26,6 @@ public class FirstInFirstOutBroadcast {
 		}
 		
 		this.urb.urbBroadcast(content, msgId);
-		this.vectorClock[this.process.getProcessId() - 1]++;
 	}
 	
 	public void fifoDeliver(Message msg, InetSocketAddress source) {
@@ -54,14 +53,9 @@ public class FirstInFirstOutBroadcast {
 		}
 		
 		boolean urbDelivered = this.urb.urbDeliver(msg , source);
-//		System.out.println("TRYING msg " + msg.getMsgId() + " from " + msg.getOriginalPid());
-		if (!urbDelivered) {
-//			System.out.println("URB failed msg " + msg.getMsgId() + " from " + msg.getOriginalPid());
-		}
-		if (urbDelivered) {			
+		if (urbDelivered) {
 			int pid = msg.getOriginalPid();
 			ConcurrentSkipListSet<Message> relevantPending = this.pending.get(pid);
-
 			// check vector clock - should we try to deliver this message?
 			if (msg.getMsgId() == (this.vectorClock[pid-1] + 1)) {
 				this.vectorClock[pid-1]++;
@@ -73,7 +67,6 @@ public class FirstInFirstOutBroadcast {
 				for (Message m : relevantPending) {
 //					boolean delivered = this.urb.urbDeliver(m , source);
 					if (m.getMsgId() == (this.vectorClock[pid-1]+1)) {
-//					if (delivered) {
 						// if we successfully delivered message, update vector clock
 						this.vectorClock[pid - 1] = this.vectorClock[pid-1] + 1;
 						// and remove message from pending
