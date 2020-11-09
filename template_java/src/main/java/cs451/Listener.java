@@ -39,7 +39,7 @@ public class Listener extends Thread {
 				if (msg != null) {
 					if (msg.isAck()) {
 //						System.out.println("ACK for message with ID = " + msg.getMsgId() + " from process = " + senderPid);
-						this.handleAckMessage(msg, senderAddr, this.process.getUrb());
+						this.handleAckMessage(msg, senderAddr, this.process.getUrb(), this.process.getFifo());
 					} else {
 //						System.out.println("MESSAGE " + msg.getMsgId() + " form = " + senderPort);
 						this.handleRegularMessage(msg, senderIp, senderPort, this.process.getUrb(), this.process.getFifo());
@@ -78,27 +78,19 @@ public class Listener extends Thread {
 	/*
 	 * 
 	 */
-	private void handleAckMessage(Message msg, InetSocketAddress sender, UniformReliableBroadcast urb ) {
+	private void handleAckMessage(Message msg, InetSocketAddress sender, UniformReliableBroadcast urb, FirstInFirstOutBroadcast fifo) {
 		this.process.addAcknowledgement(msg, sender);
-		urb.urbDeliver(msg, sender);
+//		urb.urbDeliver(msg, sender);
+		fifo.fifoDeliver(msg, sender);
 	}
 	
 	/*
 	 * 
 	 */
 	private void handleRegularMessage(Message msg, InetAddress ip, int port, UniformReliableBroadcast urb , FirstInFirstOutBroadcast fifo) {
-//		if (msg.isRebroadcastMessage() || msg.getOriginalPid() == this.process.getProcessId()) {
-//			// Acknowledge rebroadcasts and messages sent to ourselves
-//			Message ack = new Message(msg);
-//			this.process.sendP2PMessage(ack, ip, port);
-////			this.process.addAcknowledgement(msg, new InetSocketAddress(ip, port));
-//			System.out.println("REBROADCAST msg " + msg.getMsgId() + " from " + port);
-//		} else {
-//		}
 		Message ack = new Message(msg);
 		this.process.sendP2PMessage(ack, ip, port);
-		urb.urbDeliver(msg, new InetSocketAddress(ip, port));
-//		System.out.println(this.process.getProcessId() + " SENDING ack to " + port);
-//		fifo.fifoDeliver(msg, new InetSocketAddress(ip, port));
+//		urb.urbDeliver(msg, new InetSocketAddress(ip, port));
+		fifo.fifoDeliver(msg, new InetSocketAddress(ip, port));
 	}
 }

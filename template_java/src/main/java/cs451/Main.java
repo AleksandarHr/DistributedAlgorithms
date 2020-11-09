@@ -78,7 +78,6 @@ public class Main {
         p.setAddressesToPids(addressesToPids);
         p.setPidsToAddresses(pidsToAddresses);
         
-        if (parser.myId() == 1) {
     	for (int i = 2; i >= 1; i--) {
     		p.getUrb().urbBroadcast("Hello " + i, i);
     	}
@@ -88,6 +87,11 @@ public class Main {
         	}
         	p.getUrb().urbBroadcast("Hello " + i, i);
         }
+        for (int i = 8; i >= 5; i--) {
+        	if (parser.myId() == 2) {
+        		Thread.sleep(2 * 1000);
+        	}
+        	p.getUrb().urbBroadcast("Hello " + i, i);
         }
 
         System.out.println("Signaling end of broadcasting messages");

@@ -51,7 +51,7 @@ public class UniformReliableBroadcast {
 			boolean shouldDeliver = this.shouldDeliver(msg);
 //			System.out.println("will check if SHOULD urb deliver msg " + msg.getMsgId() + " :: from process " + msg.getOriginalPid());
 			if (!this.delivered.containsKey(msg) && shouldDeliver) {
-				System.out.println("URB deliver msg " + msg.getMsgId() + " from " + msg.getOriginalPid() + " having MAJORITY of " + this.process.ackerCount(msg));
+//				System.out.println("URB deliver msg " + msg.getMsgId() + " from " + msg.getOriginalPid() + " having MAJORITY of " + this.process.ackerCount(msg));
 				this.delivered.put(msg, new AtomicInteger(1));
 				return true;
 			}

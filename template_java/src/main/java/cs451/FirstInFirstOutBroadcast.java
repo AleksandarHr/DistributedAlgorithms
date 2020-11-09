@@ -54,9 +54,9 @@ public class FirstInFirstOutBroadcast {
 		}
 		
 		boolean urbDelivered = this.urb.urbDeliver(msg , source);
-		System.out.println("TRYING msg " + msg.getMsgId() + " from " + msg.getOriginalPid());
+//		System.out.println("TRYING msg " + msg.getMsgId() + " from " + msg.getOriginalPid());
 		if (!urbDelivered) {
-			System.out.println("URB failed msg " + msg.getMsgId() + " from " + msg.getOriginalPid());
+//			System.out.println("URB failed msg " + msg.getMsgId() + " from " + msg.getOriginalPid());
 		}
 		if (urbDelivered) {			
 			int pid = msg.getOriginalPid();
@@ -65,7 +65,8 @@ public class FirstInFirstOutBroadcast {
 			// check vector clock - should we try to deliver this message?
 			if (msg.getMsgId() == (this.vectorClock[pid-1] + 1)) {
 				this.vectorClock[pid-1]++;
-				System.out.println("FIFO deliver msg " + msg.getMsgId() + " from process " + msg.getOriginalPid());
+				System.out.println("d " + msg.getOriginalPid() + " " + msg.getMsgId());
+//				System.out.println("FIFO deliver msg " + msg.getMsgId() + " from process " + msg.getOriginalPid());
 				// if this is a message we are expecting, go over pending and try to urbDeliver
 				// messages from the same source
 				ConcurrentSkipListSet<Message> tempPending = new ConcurrentSkipListSet<Message>(relevantPending);
@@ -77,7 +78,8 @@ public class FirstInFirstOutBroadcast {
 						this.vectorClock[pid - 1] = this.vectorClock[pid-1] + 1;
 						// and remove message from pending
 						tempPending.remove(m);
-						System.out.println("FIFO deliver msg " + m.getMsgId() + " from process " + msg.getOriginalPid());
+						System.out.println("d " + m.getOriginalPid() + " " + m.getMsgId());
+//						System.out.println("FIFO deliver msg " + m.getMsgId() + " from process " + msg.getOriginalPid());
 					} else {
 						break;
 					}
