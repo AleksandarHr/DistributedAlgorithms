@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Process {
 	
@@ -19,7 +20,7 @@ public class Process {
 	private DatagramSocket socket;
 	private InetAddress ip;
 	private Integer port;
-	private boolean isAlive;
+	private AtomicBoolean isAlive;
 	
 	// Info from membership file - process id, list of all processes, broadcast count
 	private Integer pid;
@@ -46,11 +47,16 @@ public class Process {
 	private UniformReliableBroadcast urb;
 	private FirstInFirstOutBroadcast fifo;
 	
-	public Process(InetAddress ip, int port, int pid) {
+	private StringBuilder output;
+	private int messageCount;
+	
+	public Process(InetAddress ip, int port, int pid, int messageCount) {
 		this.ip = ip;
 		this.port = port;
 		this.pid = pid;		
-		this.isAlive = true;
+		this.isAlive = new AtomicBoolean(true);
+		this.messageCount = messageCount;
+		this.output = new StringBuilder();
 		
 		try {
 			this.socket = new DatagramSocket(this.port, this.ip);
@@ -70,6 +76,11 @@ public class Process {
 		this.fifo = new FirstInFirstOutBroadcast(this.urb);
 	}
 	
+	public void beginFifo() {
+		for (int i = 1; i <= this.messageCount; i++) {
+			this.fifo.fifoBroadcast("Hi", i);
+		}
+	}
 	
 	public void sendP2PMessage(Message m, InetAddress ip, int port) {
 		new Sender(this, m, port, ip).start();
@@ -153,11 +164,11 @@ public class Process {
 	}
 	
 	public boolean isAlive() {
-		return this.isAlive;
+		return this.isAlive.get();
 	}
 	
 	public void setIsAlive(boolean isAlive) {
-		this.isAlive = isAlive;
+		this.isAlive.set(isAlive);
 	}
 	
 	public BestEffortBroadcast getBeb() {
@@ -174,5 +185,19 @@ public class Process {
 	
 	public int getPidFromAddres(InetSocketAddress addr) {
 		return this.addressesToPids.get(addr);
+	}
+	
+	public void addToOutput(String toAdd) {
+		this.output.append(toAdd);
+		this.output.append(System.getProperty("line.separator"));
+	}
+	
+	public String getOutput() {
+		return this.output.toString();
+	}
+	
+	public void killProcess() {
+		this.isAlive.set(false);
+		this.listener.interrupt();
 	}
 }

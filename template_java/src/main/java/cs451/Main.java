@@ -1,5 +1,8 @@
 package cs451;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -10,22 +13,33 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Scanner;
 
 public class Main {
 
-    private static void handleSignal() {
+    private static void handleSignal(Parser parser, Process p) {
         //immediately stop network packet processing
         System.out.println("Immediately stopping network packet processing.");
 
         //write/flush output file if necessary
         System.out.println("Writing output.");
+        try {
+        	FileWriter writer = new FileWriter(parser.output(), false);
+        	writer.write(p.getOutput());
+        	writer.close();
+        	System.out.println("Written to output");
+        } catch (IOException e) {
+        	System.out.println("Unable to write to output");
+        	e.printStackTrace();
+        }
+        p.killProcess();
     }
 
-    private static void initSignalHandlers() {
+    private static void initSignalHandlers(Parser parser, Process p) {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
-                handleSignal();
+                handleSignal(parser, p);
             }
         });
     }
@@ -34,8 +48,22 @@ public class Main {
         Parser parser = new Parser(args);
         parser.parse();
 
-        initSignalHandlers();
-
+        int messageCount = 0;
+        if (parser.hasConfig()) {
+        	try {
+        		File config = new File(parser.config());
+        		Scanner myScanner = new Scanner(config);
+        		while (myScanner.hasNextLine()) {
+        			String in = myScanner.nextLine();
+        			messageCount = Integer.parseInt(in);
+        		}
+        		myScanner.close();
+        	} catch (FileNotFoundException e) {
+        		System.out.println("Unable to read config file.");
+        		e.printStackTrace();
+        	}
+        }
+        
         // example
         long pid = ProcessHandle.current().pid();
         System.out.println("My PID is " + pid + ".");
@@ -55,17 +83,22 @@ public class Main {
         	pidsToAddresses.put(host.getId(), addr);
     		if (host.getId() == parser.myId()) {
     			System.out.println("It's me!!");
-        		p = new Process(InetAddress.getByName(host.getIp()), host.getPort(), host.getId());
+        		p = new Process(InetAddress.getByName(host.getIp()), host.getPort(), host.getId(), messageCount);
         	}
         }
-
+        p.setAllProcesses(addresses);
+        p.setAddressesToPids(addressesToPids);
+        p.setPidsToAddresses(pidsToAddresses);
+        
+        initSignalHandlers(parser, p);
+        
         System.out.println("Barrier: " + parser.barrierIp() + ":" + parser.barrierPort());
         System.out.println("Signal: " + parser.signalIp() + ":" + parser.signalPort());
         System.out.println("Output: " + parser.output());
         // if config is defined; always check before parser.config()
-        if (parser.hasConfig()) {
-            System.out.println("Config: " + parser.config());
-        }
+//        if (parser.hasConfig()) {
+//            System.out.println("Config: " + parser.config());
+//        }
 
 
         Coordinator coordinator = new Coordinator(parser.myId(), parser.barrierIp(), parser.barrierPort(), parser.signalIp(), parser.signalPort());
@@ -74,28 +107,27 @@ public class Main {
         coordinator.waitOnBarrier();
 
         System.out.println("Broadcasting messages...");
-        p.setAllProcesses(addresses);
-        p.setAddressesToPids(addressesToPids);
-        p.setPidsToAddresses(pidsToAddresses);
         
-    	for (int i = 2; i >= 1; i--) {
-        	System.out.println("b " + i);
-    		p.getFifo().fifoBroadcast("Hello " + i, i);
-    	}
-        for (int i = 3; i <= 4; i++) {
-        	if (parser.myId() == 1) {
-        		Thread.sleep(2 * 1000);
-        	}
-        	System.out.println("b " + i);
-        	p.getFifo().fifoBroadcast("Hello " + i, i);
-        }
-        for (int i = 8; i >= 5; i--) {
-        	if (parser.myId() == 2) {
-        		Thread.sleep(2 * 1000);
-        	}
-        	System.out.println("b " + i);
-        	p.getFifo().fifoBroadcast("Hello " + i, i);
-        }
+        p.beginFifo();
+        
+//    	for (int i = 2; i >= 1; i--) {
+//        	System.out.println("b " + i);
+//    		p.getFifo().fifoBroadcast("Hello " + i, i);
+//    	}
+//        for (int i = 3; i <= 4; i++) {
+//        	if (parser.myId() == 1) {
+//        		Thread.sleep(2 * 1000);
+//        	}
+//        	System.out.println("b " + i);
+//        	p.getFifo().fifoBroadcast("Hello " + i, i);
+//        }
+//        for (int i = 8; i >= 5; i--) {
+//        	if (parser.myId() == 2) {
+//        		Thread.sleep(2 * 1000);
+//        	}
+//        	System.out.println("b " + i);
+//        	p.getFifo().fifoBroadcast("Hello " + i, i);
+//        }
 
         System.out.println("Signaling end of broadcasting messages");
         coordinator.finishedBroadcasting();

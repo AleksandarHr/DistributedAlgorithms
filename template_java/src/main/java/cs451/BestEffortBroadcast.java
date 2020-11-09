@@ -14,10 +14,11 @@ public class BestEffortBroadcast {
 	
 	public void bebBroadcast(String content, int msgId) {
 		ArrayList<InetSocketAddress> allProcesses = this.process.getAllProcesses();
+		System.out.println("b " + msgId);
+		this.process.addToOutput("b " + msgId);
 		for (InetSocketAddress addr : allProcesses) {
 			Message m = new Message(content, msgId, this.process.getProcessId(), addr.getPort(), addr.getAddress(), this.process.getProcessPort(), this.process.getProcessAddress(), false);
 			this.process.sendP2PMessage(m, addr.getAddress(), addr.getPort());
-//			System.out.println("BEB msg " + m.getMsgId() + " to " + addr.getPort());
 		}
 	}
 	
