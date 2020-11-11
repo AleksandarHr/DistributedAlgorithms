@@ -56,10 +56,12 @@ public class Sender extends Thread {
 		int resendAttempts = 0;
 		while (this.process.isAlive()) {
 			ConcurrentHashMap<InetSocketAddress, PriorityQueue<Message>> toSend = this.process.getMessagesToSend();
-			Random rand = new Random();
+//			Random rand = new Random();
 			if (toSend.size() > 0) {
-				int idx = rand.nextInt(toSend.size());
-				InetSocketAddress dest = this.allProcesses.get(idx);
+				for (int i = 0; i < toSend.size(); i ++) {
+//				int idx = rand.nextInt(toSend.size());
+//				InetSocketAddress dest = this.allProcesses.get(idx);
+				InetSocketAddress dest = this.allProcesses.get(i);
 				PriorityQueue<Message> msgs = toSend.get(dest);
 				if (msgs.size() > 0) {
 					Message nextToSend  = toSend.get(dest).peek();
@@ -95,6 +97,7 @@ public class Sender extends Thread {
 						}
 					}
 				}
+			}
 			}
 		}
 	}
