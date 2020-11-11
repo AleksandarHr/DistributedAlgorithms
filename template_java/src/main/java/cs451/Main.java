@@ -8,12 +8,15 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashMap;import java.util.Map;
+import java.util.PriorityQueue;
 import java.util.Scanner;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 public class Main {
 
-    private static void handleSignal(Parser parser, Process p) {
+    private static void handleSignal(Parser parser, Process p) throws InterruptedException {
         //immediately stop network packet processing
         System.out.println("Immediately stopping network packet processing.");
 
@@ -28,6 +31,14 @@ public class Main {
         	System.out.println("Unable to write to output");
         	e.printStackTrace();
         }
+        
+        boolean done = false;
+        FirstInFirstOutBroadcast fifo = p.getFifo();
+        while (!done) {
+        	done = fifo.allDone();
+			TimeUnit.SECONDS.sleep(1);
+        }
+        System.out.println(" ELAPSED TIME in ms = " + fifo.getElapsedTime());
         p.killProcess();
     }
 
@@ -60,6 +71,9 @@ public class Main {
         	}
         }
         
+         
+        messageCount = 5;
+        
         // example
         long pid = ProcessHandle.current().pid();
         System.out.println("My PID is " + pid + ".");
@@ -78,7 +92,7 @@ public class Main {
         	addressesToPids.put(addr, host.getId());
         	pidsToAddresses.put(host.getId(), addr);
     		if (host.getId() == parser.myId()) {
-    			System.out.println("It's me!!");
+    			System.out.println("It's me!! message count = " + messageCount);
         		p = new Process(InetAddress.getByName(host.getIp()), host.getPort(), host.getId(), messageCount);
         	}
         }

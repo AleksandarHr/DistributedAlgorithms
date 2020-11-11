@@ -75,6 +75,7 @@ public class Listener extends Thread {
 	 * 
 	 */
 	private void handleAckMessage(Message msg, InetSocketAddress sender, UniformReliableBroadcast urb, FirstInFirstOutBroadcast fifo) {
+//		System.out.println("RECEIVING AN ACK for " + msg.getMsgId() + " from " + sender.getPort());
 		this.process.addAcknowledgement(msg, sender);
 //		urb.urbDeliver(msg, sender);
 		fifo.fifoDeliver(msg, sender);
@@ -85,7 +86,8 @@ public class Listener extends Thread {
 	 */
 	private void handleRegularMessage(Message msg, InetAddress ip, int port, UniformReliableBroadcast urb , FirstInFirstOutBroadcast fifo) {
 		Message ack = new Message(msg);
-		this.process.sendP2PMessage(ack, ip, port);
+		this.process.sendAck(ack, new InetSocketAddress(ip, port));
+//		this.process.sendP2PMessage(ack, ip, port);
 //		urb.urbDeliver(msg, new InetSocketAddress(ip, port));
 		fifo.fifoDeliver(msg, new InetSocketAddress(ip, port));
 	}

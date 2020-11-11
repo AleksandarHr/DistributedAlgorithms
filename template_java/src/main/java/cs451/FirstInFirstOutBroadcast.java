@@ -14,18 +14,30 @@ public class FirstInFirstOutBroadcast {
 	ReentrantLock vcLock = new ReentrantLock();
 	private ConcurrentHashMap<Integer, ConcurrentSkipListSet<Message>> pending;
 	
+	long startTime, endTime, elapsed;
+	
 	public FirstInFirstOutBroadcast(UniformReliableBroadcast urb) {
 		this.urb = urb;		
 		this.process = urb.getProcess();
 	}
 	
 	public void fifoBroadcast(int msgId) {
+		this.startTime = System.nanoTime();
 		if (this.vectorClock == null) {
 			int processCount = this.process.getAllProcesses().size();
 			this.vectorClock = new int[processCount];
 		}
 		this.process.addToOutput("b " + msgId);
 		this.urb.urbBroadcast(msgId);
+	}
+	
+	public int[] getVc() {
+		this.vcLock.lock();
+		int[] copied = new int[this.vectorClock.length];
+		System.arraycopy(this.vectorClock, 0, copied, 0, this.vectorClock.length);
+		this.vcLock.unlock();
+		
+		return copied;
 	}
 	
 	public void fifoDeliver(Message msg, InetSocketAddress source) {
@@ -53,6 +65,7 @@ public class FirstInFirstOutBroadcast {
 		}
 		
 		boolean urbDelivered = this.urb.urbDeliver(msg , source);
+//		System.out.println("TRID TO URB DELIVEr");
 		if (urbDelivered) {
 			int pid = msg.getOriginalPid();
 			ConcurrentSkipListSet<Message> relevantPending = this.pending.get(pid);
@@ -62,6 +75,7 @@ public class FirstInFirstOutBroadcast {
 				if (msg.getMsgId() == (this.vectorClock[pid-1] + 1)) {
 					this.vectorClock[pid-1]++;
 					this.process.addToOutput("d " + msg.getOriginalPid() + " " + msg.getMsgId());
+					System.out.println("d " + msg.getOriginalPid() + " " + msg.getMsgId());
 					// if this is a message we are expecting, go over pending and try to urbDeliver
 					// messages from the same source
 					ConcurrentSkipListSet<Message> tempPending = new ConcurrentSkipListSet<Message>(relevantPending);
@@ -72,6 +86,7 @@ public class FirstInFirstOutBroadcast {
 							// and remove message from pending
 							tempPending.remove(m);
 							this.process.addToOutput("d " + m.getOriginalPid() + " " + m.getMsgId());
+							System.out.println("d " + m.getOriginalPid() + " " + m.getMsgId());							
 						} else {
 							break;
 						}
@@ -85,5 +100,24 @@ public class FirstInFirstOutBroadcast {
 				this.vcLock.unlock();
 			}
 		}			
+	}
+	
+	public boolean allDone() {
+		int[] vc = this.getVc();
+		int msgs = this.process.getMessageCount();
+		boolean done = true;
+		for (int i = 0; i < vc.length; i++) {
+			if (vc[i] != msgs) {
+				return false;
+			}
+		}
+		this.endTime = System.nanoTime();
+		this.elapsed = (this.endTime - this.startTime) / 1000000;
+		
+		return true;
+	}
+	
+	public long getElapsedTime() {
+		return this.elapsed;
 	}
 }
