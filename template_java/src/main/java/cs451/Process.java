@@ -39,7 +39,16 @@ public class Process {
 
 	private StringBuilder output;
 	private int messageCount;
-
+	private long elapsedTime;
+	
+	public void setElapsed(long time) {
+		this.elapsedTime = time;
+	}
+	
+	public long getElapsed() {
+		return this.elapsedTime;
+	}
+	
 	public Process(InetAddress ip, int port, int pid, int messageCount) {
 		this.ip = ip;
 		this.port = port;

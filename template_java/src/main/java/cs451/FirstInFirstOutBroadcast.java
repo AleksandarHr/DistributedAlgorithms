@@ -97,12 +97,16 @@ public class FirstInFirstOutBroadcast {
 					this.pending.put(pid, relevantPending);
 				}
 			} finally {
+				boolean done = this.allDone();
+				if (done) {
+					this.process.setElapsed(this.elapsed);
+				}
 				this.vcLock.unlock();
 			}
 		}			
 	}
 	
-	public boolean allDone() {
+	private boolean allDone() {
 		int[] vc = this.getVc();
 		int msgs = this.process.getMessageCount();
 		boolean done = true;
@@ -115,9 +119,5 @@ public class FirstInFirstOutBroadcast {
 		this.elapsed = (this.endTime - this.startTime) / 1000000;
 		
 		return true;
-	}
-	
-	public long getElapsedTime() {
-		return this.elapsed;
 	}
 }

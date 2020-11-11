@@ -8,11 +8,8 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.HashMap;import java.util.Map;
-import java.util.PriorityQueue;
+import java.util.HashMap;
 import java.util.Scanner;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 public class Main {
 
@@ -32,13 +29,7 @@ public class Main {
         	e.printStackTrace();
         }
         
-        boolean done = false;
-        FirstInFirstOutBroadcast fifo = p.getFifo();
-        while (!done) {
-        	done = fifo.allDone();
-			TimeUnit.SECONDS.sleep(1);
-        }
-        System.out.println(" ELAPSED TIME in ms = " + fifo.getElapsedTime());
+        System.out.println(" ELAPSED TIME in ms = " + p.getElapsed());
         p.killProcess();
     }
 
@@ -46,7 +37,12 @@ public class Main {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
-                handleSignal(parser, p);
+                try {
+					handleSignal(parser, p);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
             }
         });
     }
@@ -70,10 +66,7 @@ public class Main {
         		e.printStackTrace();
         	}
         }
-        
-         
-        messageCount = 5;
-        
+               
         // example
         long pid = ProcessHandle.current().pid();
         System.out.println("My PID is " + pid + ".");
