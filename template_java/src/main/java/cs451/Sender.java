@@ -54,50 +54,52 @@ public class Sender extends Thread {
 	
 	public void run() {
 		int resendAttempts = 0;
+		// Run the sender thread while the process is alive
 		while (this.process.isAlive()) {
 			ConcurrentHashMap<InetSocketAddress, PriorityQueue<Message>> toSend = this.process.getMessagesToSend();
-//			Random rand = new Random();
 			if (toSend.size() > 0) {
+				// For every process, try to send the most urgent message (e.g. message with lowest msg ID) we know we have to send
 				for (int i = 0; i < toSend.size(); i ++) {
-//				int idx = rand.nextInt(toSend.size());
-//				InetSocketAddress dest = this.allProcesses.get(idx);
-				InetSocketAddress dest = this.allProcesses.get(i);
-				PriorityQueue<Message> msgs = toSend.get(dest);
-				if (msgs.size() > 0) {
-					Message nextToSend  = toSend.get(dest).peek();
-					resendAttempts = 0;
+					InetSocketAddress dest = this.allProcesses.get(i);
+					PriorityQueue<Message> msgs = toSend.get(dest);
+					if (msgs.size() > 0) {
+						Message nextToSend  = toSend.get(dest).peek();
+						resendAttempts = 0;
 				
-					byte[] msgBytes = null;
-					try {
-						msgBytes = getBytesArrayFromMessageObject(nextToSend);
-					} catch (IOException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
-					}
-				
-					if (msgBytes != null) {
-						DatagramPacket packetToSend = new DatagramPacket(msgBytes, msgBytes.length, dest.getAddress(), dest.getPort()); 
-						while(!this.process.hasBeenAcknowledged(nextToSend, dest) && resendAttempts < this.resendBound) {
-							try {
-								this.processSocket.send(packetToSend);
-							} catch (IOException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
-							try {
-								TimeUnit.MILLISECONDS.sleep(2^resendAttempts);
-							} catch (InterruptedException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
-							resendAttempts++;
+						byte[] msgBytes = null;
+						try {
+							msgBytes = getBytesArrayFromMessageObject(nextToSend);
+						} catch (IOException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
 						}
-						if (this.process.hasBeenAcknowledged(nextToSend, dest)) {
-							this.process.removeMessageFromSend(dest, nextToSend);
+				
+						if (msgBytes != null) {
+							DatagramPacket packetToSend = new DatagramPacket(msgBytes, msgBytes.length, dest.getAddress(), dest.getPort()); 
+							// Retransmit the message until it has been acknowledged or an attempts limit has been reached
+							while(!this.process.hasBeenAcknowledged(nextToSend, dest) && resendAttempts < this.resendBound) {
+								try {
+									this.processSocket.send(packetToSend);
+								} catch (IOException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+								try {
+									// exponential backoff for retransmission
+									TimeUnit.MILLISECONDS.sleep(2^resendAttempts);
+								} catch (InterruptedException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+								resendAttempts++;
+							}
+							// if the message was acknowledged, remove it from the to-be-sent datastructure
+							if (this.process.hasBeenAcknowledged(nextToSend, dest)) {
+								this.process.removeMessageFromSend(dest, nextToSend);
+							}
 						}
 					}
 				}
-			}
 			}
 		}
 	}
@@ -122,28 +124,6 @@ public class Sender extends Thread {
 			e.printStackTrace();
 		}
 	}
-//	 Sends a message to a single destination 
-//	private void sendMessage(Message toSend, DatagramSocket processSocket) throws IOException, InterruptedException {
-//		byte[] msgBytes = getBytesArrayFromMessageObject(toSend);
-//		DatagramPacket packetToSend = new DatagramPacket(msgBytes, msgBytes.length, this.destinationIp, this.destinationPort);
-//		try {
-//			if (toSend.isAck()) {
-//				// send an acknowledgment message
-//				processSocket.send(packetToSend);
-////				System.out.println("SENDING ACK for msg " + toSend.getMsgId() + " to " + this.process.getPidFromAddres(new InetSocketAddress(this.destinationIp, this.destinationPort)));
-//			} else {
-//				InetSocketAddress destAddr = new InetSocketAddress(this.destinationIp, this.destinationPort);
-//				// keep sending the message until we get an acknowledgment from the destination process
-//				while(!this.process.hasBeenAcknowledged(toSend, destAddr)) {
-////					System.out.println("NO ACK yet - resend msg " + toSend.getMsgId() + " to process " + this.process.getAddressesToPids().get(destAddr));
-//					processSocket.send(packetToSend);
-//					TimeUnit.SECONDS.sleep(1);
-//				}
-//			}
-//		} catch (IOException e) {
-//			System.out.println("Packet sending failed.\n");
-//		}
-//	}
 
 	// stackoverflow.com/questions/2836646/java-serializable-object-to-byte-array
 	private byte[] getBytesArrayFromMessageObject(Message msg) throws IOException {

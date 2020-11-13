@@ -8,6 +8,8 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Listener extends Thread {
 	
@@ -15,18 +17,24 @@ public class Listener extends Thread {
 	
 	private Process process;
 	private byte[] buffer = new byte[UDPPACKETSIZELIMIT];
-	DatagramPacket receivedPacket = null;
+	private DatagramPacket receivedPacket = null;
+	private DatagramSocket socket;
+
+//	private final int threadPoolSize = 1;
+//	private ExecutorService threadPool;
 	
 	public Listener(Process process) {
 		this.process = process;
+		this.socket = this.process.getSocket();
+//		this.threadPool = Executors.newFixedThreadPool(this.threadPoolSize);
 	}
 	
 	public void run() {
-		DatagramSocket socket = this.process.getSocket();
+		// Listen for incoming packets while the process is alive
 		while (this.process.isAlive()) {
-			receivedPacket = new DatagramPacket(buffer, buffer.length);;
+			this.receivedPacket = new DatagramPacket(buffer, buffer.length);;
 			try {
-				socket.receive(receivedPacket);
+				this.socket.receive(receivedPacket);
 				InetAddress senderIp = receivedPacket.getAddress();
 				int senderPort = receivedPacket.getPort();
 				InetSocketAddress senderAddr = new InetSocketAddress(senderIp, senderPort);
@@ -75,7 +83,7 @@ public class Listener extends Thread {
 	 * 
 	 */
 	private void handleAckMessage(Message msg, InetSocketAddress sender, UniformReliableBroadcast urb, FirstInFirstOutBroadcast fifo) {
-//		System.out.println("RECEIVING AN ACK for " + msg.getMsgId() + " from " + sender.getPort());
+		// Add ack for the message from the given sender and try to FIFO deliver
 		this.process.addAcknowledgement(msg, sender);
 //		urb.urbDeliver(msg, sender);
 		fifo.fifoDeliver(msg, sender);
@@ -85,9 +93,9 @@ public class Listener extends Thread {
 	 * 
 	 */
 	private void handleRegularMessage(Message msg, InetAddress ip, int port, UniformReliableBroadcast urb , FirstInFirstOutBroadcast fifo) {
+		// Send an ack for the message to the sender & try to fifo deliver
 		Message ack = new Message(msg);
 		this.process.sendAck(ack, new InetSocketAddress(ip, port));
-//		this.process.sendP2PMessage(ack, ip, port);
 //		urb.urbDeliver(msg, new InetSocketAddress(ip, port));
 		fifo.fifoDeliver(msg, new InetSocketAddress(ip, port));
 	}

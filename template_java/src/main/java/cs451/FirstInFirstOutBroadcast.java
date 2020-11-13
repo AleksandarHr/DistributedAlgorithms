@@ -21,8 +21,9 @@ public class FirstInFirstOutBroadcast {
 		this.process = urb.getProcess();
 	}
 	
+	// Initialize vector clock and initialize urb broadcast -> beb broadcast
 	public void fifoBroadcast(int msgId) {
-		this.startTime = System.nanoTime();
+//		this.startTime = System.nanoTime();
 		if (this.vectorClock == null) {
 			int processCount = this.process.getAllProcesses().size();
 			this.vectorClock = new int[processCount];
@@ -31,17 +32,19 @@ public class FirstInFirstOutBroadcast {
 		this.urb.urbBroadcast(msgId);
 	}
 	
+	// returns a copy of the current VC states
 	public int[] getVc() {
 		this.vcLock.lock();
 		int[] copied = new int[this.vectorClock.length];
 		System.arraycopy(this.vectorClock, 0, copied, 0, this.vectorClock.length);
 		this.vcLock.unlock();
-		
 		return copied;
 	}
 	
+	// FIFO deliver algorithm
 	public void fifoDeliver(Message msg, InetSocketAddress source) {
 		int processCount = this.process.getAllProcesses().size();
+		// initialize the pending messages data structure
 		if (this.pending == null) {
 			this.pending = new ConcurrentHashMap<Integer, ConcurrentSkipListSet<Message>>();
 			// initialize pending
@@ -64,8 +67,8 @@ public class FirstInFirstOutBroadcast {
 			this.vectorClock = new int[processCount];
 		}
 		
+		// try to URB deliver a message from a given source
 		boolean urbDelivered = this.urb.urbDeliver(msg , source);
-//		System.out.println("TRID TO URB DELIVEr");
 		if (urbDelivered) {
 			int pid = msg.getOriginalPid();
 			ConcurrentSkipListSet<Message> relevantPending = this.pending.get(pid);
@@ -75,9 +78,9 @@ public class FirstInFirstOutBroadcast {
 				if (msg.getMsgId() == (this.vectorClock[pid-1] + 1)) {
 					this.vectorClock[pid-1]++;
 					this.process.addToOutput("d " + msg.getOriginalPid() + " " + msg.getMsgId());
-					System.out.println("d " + msg.getOriginalPid() + " " + msg.getMsgId());
+//					System.out.println("d " + msg.getOriginalPid() + " " + msg.getMsgId());
 					// if this is a message we are expecting, go over pending and try to urbDeliver
-					// messages from the same source
+					// messages from the same source - maybe we can deliver some of them now
 					ConcurrentSkipListSet<Message> tempPending = new ConcurrentSkipListSet<Message>(relevantPending);
 					for (Message m : relevantPending) {
 						if (m.getMsgId() == (this.vectorClock[pid-1]+1)) {
@@ -86,7 +89,7 @@ public class FirstInFirstOutBroadcast {
 							// and remove message from pending
 							tempPending.remove(m);
 							this.process.addToOutput("d " + m.getOriginalPid() + " " + m.getMsgId());
-							System.out.println("d " + m.getOriginalPid() + " " + m.getMsgId());							
+//							System.out.println("d " + m.getOriginalPid() + " " + m.getMsgId());							
 						} else {
 							break;
 						}
@@ -97,27 +100,28 @@ public class FirstInFirstOutBroadcast {
 					this.pending.put(pid, relevantPending);
 				}
 			} finally {
-				boolean done = this.allDone();
-				if (done) {
-					this.process.setElapsed(this.elapsed);
-				}
+//				boolean done = this.allDone();
+//				if (done) {
+//					this.process.setElapsed(this.elapsed);
+//				}
 				this.vcLock.unlock();
 			}
 		}			
 	}
 	
-	private boolean allDone() {
-		int[] vc = this.getVc();
-		int msgs = this.process.getMessageCount();
-		boolean done = true;
-		for (int i = 0; i < vc.length; i++) {
-			if (vc[i] != msgs) {
-				return false;
-			}
-		}
-		this.endTime = System.nanoTime();
-		this.elapsed = (this.endTime - this.startTime) / 1000000;
-		
-		return true;
-	}
+	
+	// Used for recording execution time
+//	private boolean allDone() {
+//		int[] vc = this.getVc();
+//		int msgs = this.process.getMessageCount();
+//		for (int i = 0; i < vc.length; i++) {
+//			if (vc[i] != msgs) {
+//				return false;
+//			}
+//		}
+//		this.endTime = System.nanoTime();
+//		this.elapsed = (this.endTime - this.startTime) / 1000000;
+//		
+//		return true;
+//	}
 }

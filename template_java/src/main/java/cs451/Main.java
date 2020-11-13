@@ -29,7 +29,9 @@ public class Main {
         	e.printStackTrace();
         }
         
-        System.out.println(" ELAPSED TIME in ms = " + p.getElapsed());
+//        System.out.println(" ELAPSED TIME in ms = " + p.getElapsed());
+//        System.out.println(" COUNT PL DELIVERED = " + p.countDelivered());
+//        System.out.println(" COUNT URB DELIVERED = " + p.getUrb().countDelivered());
         p.killProcess();
     }
 
@@ -85,7 +87,6 @@ public class Main {
         	addressesToPids.put(addr, host.getId());
         	pidsToAddresses.put(host.getId(), addr);
     		if (host.getId() == parser.myId()) {
-    			System.out.println("It's me!! message count = " + messageCount);
         		p = new Process(InetAddress.getByName(host.getIp()), host.getPort(), host.getId(), messageCount);
         	}
         }
@@ -102,7 +103,7 @@ public class Main {
         System.out.println("Waiting for all processes for finish initialization");
         coordinator.waitOnBarrier();
 
-        System.out.println("Broadcasting messages...");
+        System.out.println("Broadcasting " + messageCount + " messages...");
         
         p.beginFifo();
         
