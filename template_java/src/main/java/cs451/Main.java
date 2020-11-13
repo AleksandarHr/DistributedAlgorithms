@@ -1,29 +1,50 @@
 package cs451;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Scanner;
 
 public class Main {
 
-    private static void handleSignal() {
+    private static void handleSignal(Parser parser, Process p) throws InterruptedException {
         //immediately stop network packet processing
         System.out.println("Immediately stopping network packet processing.");
 
         //write/flush output file if necessary
         System.out.println("Writing output.");
+        try {
+        	FileWriter writer = new FileWriter(parser.output(), false);
+        	writer.write(p.getOutput());
+        	writer.close();
+        	System.out.println("Written to output");
+        } catch (IOException e) {
+        	System.out.println("Unable to write to output");
+        	e.printStackTrace();
+        }
+        
+//        System.out.println(" ELAPSED TIME in ms = " + p.getElapsed());
+//        System.out.println(" COUNT PL DELIVERED = " + p.countDelivered());
+//        System.out.println(" COUNT URB DELIVERED = " + p.getUrb().countDelivered());
+        p.killProcess();
     }
 
-    private static void initSignalHandlers() {
+    private static void initSignalHandlers(Parser parser, Process p) {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
-                handleSignal();
+                try {
+					handleSignal(parser, p);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
             }
         });
     }
@@ -32,13 +53,30 @@ public class Main {
         Parser parser = new Parser(args);
         parser.parse();
 
-        initSignalHandlers();
-
+        int messageCount = 0;
+        if (parser.hasConfig()) {
+        	try {
+        		File config = new File(parser.config());
+        		Scanner myScanner = new Scanner(config);
+        		while (myScanner.hasNextLine()) {
+        			String in = myScanner.nextLine();
+        			messageCount = Integer.parseInt(in);
+        		}
+        		myScanner.close();
+        	} catch (FileNotFoundException e) {
+        		System.out.println("Unable to read config file.");
+        		e.printStackTrace();
+        	}
+        }
+               
         // example
         long pid = ProcessHandle.current().pid();
         System.out.println("My PID is " + pid + ".");
         System.out.println("Use 'kill -SIGINT " + pid + " ' or 'kill -SIGTERM " + pid + " ' to stop processing packets.");
         ArrayList<InetSocketAddress> addresses = new ArrayList<InetSocketAddress>();
+        HashMap<InetSocketAddress, Integer> addressesToPids = new HashMap<InetSocketAddress, Integer>();
+        HashMap<Integer, InetSocketAddress> pidsToAddresses = new HashMap<Integer, InetSocketAddress>();
+
         System.out.println("My id is " + parser.myId() + ".");
         System.out.println("List of hosts is:");
         Process p = null;
@@ -46,33 +84,29 @@ public class Main {
     		System.out.println(host.getId() + ", " + host.getIp() + ", " + host.getPort());
         	InetSocketAddress addr = new InetSocketAddress(InetAddress.getByName(host.getIp()), host.getPort());
         	addresses.add(addr);
+        	addressesToPids.put(addr, host.getId());
+        	pidsToAddresses.put(host.getId(), addr);
     		if (host.getId() == parser.myId()) {
-    			System.out.println("It's me!!");
-        		p = new Process(InetAddress.getByName(host.getIp()), host.getPort(), host.getId());
+        		p = new Process(InetAddress.getByName(host.getIp()), host.getPort(), host.getId(), messageCount);
         	}
         }
-
+        p.setAllProcesses(addresses);
+        
+        initSignalHandlers(parser, p);
+        
         System.out.println("Barrier: " + parser.barrierIp() + ":" + parser.barrierPort());
         System.out.println("Signal: " + parser.signalIp() + ":" + parser.signalPort());
         System.out.println("Output: " + parser.output());
-        // if config is defined; always check before parser.config()
-        if (parser.hasConfig()) {
-            System.out.println("Config: " + parser.config());
-        }
-
 
         Coordinator coordinator = new Coordinator(parser.myId(), parser.barrierIp(), parser.barrierPort(), parser.signalIp(), parser.signalPort());
 
         System.out.println("Waiting for all processes for finish initialization");
         coordinator.waitOnBarrier();
 
-        System.out.println("Broadcasting messages...");
-        p.setAllProcesses(addresses);
-
-        if (parser.myId() == 1) {
-        	System.out.println("Process " + parser.myId() + " broadcasting message \"Hello\"");
-        	p.getBeb().bebBroadcast("Hello", 1);
-        }
+        System.out.println("Broadcasting " + messageCount + " messages...");
+        
+        p.beginFifo();
+        
         System.out.println("Signaling end of broadcasting messages");
         coordinator.finishedBroadcasting();
 

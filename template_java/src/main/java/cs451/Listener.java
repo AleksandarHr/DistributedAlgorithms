@@ -7,45 +7,46 @@ import java.io.ObjectInputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.SocketException;
+import java.net.InetSocketAddress;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Listener extends Thread {
 	
 	private final int UDPPACKETSIZELIMIT = 65535;
 	
 	private Process process;
-	private InetAddress ip;
-	private Integer port;
-	private boolean running;
 	private byte[] buffer = new byte[UDPPACKETSIZELIMIT];
-	DatagramPacket receivedPacket = null;
+	private DatagramPacket receivedPacket = null;
+	private DatagramSocket socket;
+
+//	private final int threadPoolSize = 1;
+//	private ExecutorService threadPool;
 	
 	public Listener(Process process) {
 		this.process = process;
+		this.socket = this.process.getSocket();
+//		this.threadPool = Executors.newFixedThreadPool(this.threadPoolSize);
 	}
 	
 	public void run() {
-		running = true;
-		DatagramSocket socket = this.process.getSocket();
-		BestEffortBroadcast beb = new BestEffortBroadcast(this.process);
-		while (running) {
-			receivedPacket = new DatagramPacket(buffer, buffer.length);;
+		// Listen for incoming packets while the process is alive
+		while (this.process.isAlive()) {
+			this.receivedPacket = new DatagramPacket(buffer, buffer.length);;
 			try {
-				socket.receive(receivedPacket);
+				this.socket.receive(receivedPacket);
 				InetAddress senderIp = receivedPacket.getAddress();
 				int senderPort = receivedPacket.getPort();
+				InetSocketAddress senderAddr = new InetSocketAddress(senderIp, senderPort);
 				Message msg = getMessageObjectFromByteArray(receivedPacket.getData());
 				
 				if (msg != null) {
 					if (msg.isAck()) {
-						System.out.println("Receiving an ACK from " + senderPort);
-						this.handleAckMessage(msg);
-					} else if (msg.isBroadcastMessage()){
-						System.out.println("Receiving a BROADCAST from " + senderPort);
-						this.handleBroadcastMessage(msg, senderIp, senderPort, beb);
+//						System.out.println("ACK for message with ID = " + msg.getMsgId() + " from process = " + senderPid);
+						this.handleAckMessage(msg, senderAddr, this.process.getUrb(), this.process.getFifo());
 					} else {
-						System.out.println("Receiving a NORMAL MESSAGE from " + senderPort);
-						this.handleRegularMessage(msg, senderIp, senderPort, beb);
+//						System.out.println("MESSAGE " + msg.getMsgId() + " form = " + senderPort);
+						this.handleRegularMessage(msg, senderIp, senderPort, this.process.getUrb(), this.process.getFifo());
 					}
 				}
 				
@@ -81,32 +82,21 @@ public class Listener extends Thread {
 	/*
 	 * 
 	 */
-	private void handleBroadcastMessage(Message msg, InetAddress ip, int port, BestEffortBroadcast beb) {
-		// Deliver the message, if not previously delivered
-		beb.bebDeliver(msg);
-	
-		// Send an ack for the message to the sender
-		Message ack = new Message(msg);
-		this.process.sendP2PMessage(ack, ip, port);
+	private void handleAckMessage(Message msg, InetSocketAddress sender, UniformReliableBroadcast urb, FirstInFirstOutBroadcast fifo) {
+		// Add ack for the message from the given sender and try to FIFO deliver
+		this.process.addAcknowledgement(msg, sender);
+//		urb.urbDeliver(msg, sender);
+		fifo.fifoDeliver(msg, sender);
 	}
 	
 	/*
 	 * 
 	 */
-	private void handleAckMessage(Message msg) {
-		this.process.addAcknowledgement(msg);
-	}
-	
-	/*
-	 * 
-	 */
-	private void handleRegularMessage(Message msg, InetAddress ip, int port, BestEffortBroadcast beb) {
-		// Deliver the message, if not previously delivered
-		beb.bebDeliver(msg);
-		
-		// Send an ack for the message to the sender
-		System.out.println("SENDING AN ACK to " + port);
+	private void handleRegularMessage(Message msg, InetAddress ip, int port, UniformReliableBroadcast urb , FirstInFirstOutBroadcast fifo) {
+		// Send an ack for the message to the sender & try to fifo deliver
 		Message ack = new Message(msg);
-		this.process.sendP2PMessage(ack, ip, port);
+		this.process.sendAck(ack, new InetSocketAddress(ip, port));
+//		urb.urbDeliver(msg, new InetSocketAddress(ip, port));
+		fifo.fifoDeliver(msg, new InetSocketAddress(ip, port));
 	}
 }
