@@ -43,6 +43,7 @@ public class Process {
 	private BestEffortBroadcast beb;
 	private UniformReliableBroadcast urb;
 	private FirstInFirstOutBroadcast fifo;
+	private LocalizedCausalBroadcast lcb;
 
 	private StringBuilder output;
 	private int messageCount;
@@ -76,6 +77,7 @@ public class Process {
 		this.beb = new BestEffortBroadcast(this);
 		this.urb = new UniformReliableBroadcast(this.beb);
 		this.fifo = new FirstInFirstOutBroadcast(this.urb);
+		this.lcb = new LocalizedCausalBroadcast(this.urb);
 	}
 
 	// FIFO broadcast 'messageCount' number of messages with IDs from 1 to messageCount
@@ -84,7 +86,14 @@ public class Process {
 			this.fifo.fifoBroadcast(i);
 		}
 	}
-
+	
+	// LCB broadcast 'messageCount' number of messages with IDs from 1 to messageCount
+	public void beginLcb() {
+		for (int i = 1; i <= this.messageCount; i++) {
+			this.lcb.lcbBroadcast(i);
+		}
+	}
+	
 	public void sendP2PMessage(Message msg, InetAddress ip, int port) {
 		// if msg is not an ack, add to hashmap of messages to be sent
 		if (!msg.isAck()) {
@@ -216,6 +225,10 @@ public class Process {
 		return this.fifo;
 	}
 
+	public LocalizedCausalBroadcast getLcb() {
+		return this.lcb;
+	}
+	
 	public ArrayList<InetSocketAddress> getAllProcesses() {
 		return this.allProcesses;
 	}

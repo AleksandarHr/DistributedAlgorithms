@@ -113,7 +113,8 @@ public class Main {
 
         System.out.println("Broadcasting " + messageCount + " messages...");
         
-        p.beginFifo();
+//        p.beginFifo();
+        p.beginLcb();
         System.out.println(p.getDependencies().toString());
         System.out.println("Signaling end of broadcasting messages");
         coordinator.finishedBroadcasting();

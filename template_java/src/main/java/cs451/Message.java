@@ -21,6 +21,8 @@ public class Message implements Serializable {
 		this.isAck = true;
 		this.msgId = originalMessage.getMsgId();
 		this.originalPid = originalMessage.getOriginalPid();
+		this.messageVc = new int[originalMessage.getMessageVc().length];
+		System.arraycopy(this.messageVc,  0, originalMessage.getMessageVc(), 0, this.messageVc.length);
 	}
 		
 	// Message constructor - creates a message object with provided string content, dest/source port/addr
@@ -37,8 +39,9 @@ public class Message implements Serializable {
 		this.msgId = msgId;
 		this.originalPid = senderPid;
 		
-		int[] copied = new int[this.messageVc.length];
-		System.arraycopy(this.messageVc, 0, copied, 0, this.messageVc.length);
+		int[] copied = new int[messageVc.length];
+		this.messageVc = new int[messageVc.length];
+		System.arraycopy(this.messageVc, 0, copied, 0, messageVc.length);
 	}
 	
 	public int getOriginalPid() {
