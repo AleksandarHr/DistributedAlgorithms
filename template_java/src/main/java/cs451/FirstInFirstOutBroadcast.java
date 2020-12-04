@@ -28,8 +28,18 @@ public class FirstInFirstOutBroadcast {
 			int processCount = this.process.getAllProcesses().size();
 			this.vectorClock = new int[processCount];
 		}
-		this.process.addToOutput("b " + msgId);
+//		this.process.addToOutput("b " + msgId);
 		this.urb.urbBroadcast(msgId);
+	}
+	
+	public void fifoBroadcast(Message msg) {
+//		this.startTime = System.nanoTime();
+		if (this.vectorClock == null) {
+			int processCount = this.process.getAllProcesses().size();
+			this.vectorClock = new int[processCount];
+		}
+//		this.process.addToOutput("b " + msgId);
+		this.urb.urbBroadcast(msg);
 	}
 	
 	// returns a copy of the current VC states
@@ -109,6 +119,9 @@ public class FirstInFirstOutBroadcast {
 		}			
 	}
 	
+	public Process getProcess() {
+		return this.process;
+	}
 	
 	// Used for recording execution time
 //	private boolean allDone() {
