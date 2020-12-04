@@ -52,15 +52,22 @@ public class Main {
     public static void main(String[] args) throws InterruptedException, UnknownHostException {
         Parser parser = new Parser(args);
         parser.parse();
-
+        
+        String[] dependencies = {};
         int messageCount = 0;
         if (parser.hasConfig()) {
         	try {
         		File config = new File(parser.config());
         		Scanner myScanner = new Scanner(config);
+        		messageCount = Integer.parseInt(myScanner.nextLine());
+        		int processId = parser.myId();
+        		int lineId = 0;
         		while (myScanner.hasNextLine()) {
-        			String in = myScanner.nextLine();
-        			messageCount = Integer.parseInt(in);
+        			lineId++;
+        			String[] temp = myScanner.nextLine().trim().split(" ");        			
+        			if (lineId == processId) {
+        				dependencies = temp;
+        			}
         		}
         		myScanner.close();
         	} catch (FileNotFoundException e) {
@@ -91,6 +98,7 @@ public class Main {
         	}
         }
         p.setAllProcesses(addresses);
+        p.setDependencies(dependencies);
         
         initSignalHandlers(parser, p);
         
@@ -106,7 +114,7 @@ public class Main {
         System.out.println("Broadcasting " + messageCount + " messages...");
         
         p.beginFifo();
-        
+        System.out.println(p.getDependencies().toString());
         System.out.println("Signaling end of broadcasting messages");
         coordinator.finishedBroadcasting();
 

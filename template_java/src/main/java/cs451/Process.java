@@ -26,6 +26,8 @@ public class Process {
 	private Integer pid;
 	private ArrayList<InetSocketAddress> allProcesses;
 
+	private Set<Integer> dependenciesSet;
+	
 	// Listener object of the process
 	private Listener listener;
 	private Sender sender;
@@ -53,7 +55,8 @@ public class Process {
 		this.isAlive = new AtomicBoolean(true);
 		this.messageCount = messageCount;
 		this.output = new StringBuilder();
-
+		this.dependenciesSet = new HashSet<Integer>();
+		
 		// try to open the process' socket
 		try {
 			this.socket = new DatagramSocket(this.port, this.ip);
@@ -139,6 +142,17 @@ public class Process {
 		this.sender.start();
 	}
 
+	public void setDependencies(String[] dependencies) {
+		for (int i = 0; i < dependencies.length; i++) {
+			int dependencyId = Integer.parseInt(dependencies[i]);
+			this.dependenciesSet.add(dependencyId);
+		}
+	}
+	
+	public Set<Integer> getDependencies() {
+		return this.dependenciesSet;
+	}
+	
 	// Checks if the process is still running
 	public boolean isAlive() {
 		return this.isAlive.get();
