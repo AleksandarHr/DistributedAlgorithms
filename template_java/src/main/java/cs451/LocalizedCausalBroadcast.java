@@ -27,7 +27,12 @@ public class LocalizedCausalBroadcast {
 		this.process.addToOutput("b " + msgId);
 		System.out.println("creating msg to LCB broadcast");
 		// Create a message to broadcast with provided msgId and current process VC
-		Message msg = new Message(msgId, this.process.getProcessId(), this.prepareMessageVc());
+		int[] msgVc = this.prepareMessageVc();
+		Message msg = new Message(msgId, this.process.getProcessId(), msgVc);
+		System.out.println("PASSED VC:");
+		printArray(msgVc);
+		System.out.println("RETRIEVED VC:");
+		printArray(msg.getMessageVc());
 		this.urb.urbBroadcast(msg);
 	}
 	
@@ -39,7 +44,6 @@ public class LocalizedCausalBroadcast {
 				msgVc[i] = 0;
 			}
 		}
-		printArray(msgVc);
 		return msgVc;
 	}
 	
@@ -69,13 +73,8 @@ public class LocalizedCausalBroadcast {
 		if (msg.getMsgId() != (this.vectorClock[pid-1] + 1)) {
 			return false;
 		}
-		if (messageVc == null) {
-			System.out.println("MESSAGE VC IS NULL");
-			if (msg.isAck() == true) {
-				System.out.println("and it's an ACK");
-			}
-		}
 		for (int i = 0; i < processVc.length; i++) {
+			System.out.println("MSG VC = " + messageVc[i] + " :: PROCESS VC = " + processVc[i]);
 			if (messageVc[i] > processVc[i]) {
 				return false;
 			}

@@ -90,6 +90,14 @@ public class Process {
 	// LCB broadcast 'messageCount' number of messages with IDs from 1 to messageCount
 	public void beginLcb() {
 		for (int i = 1; i <= this.messageCount; i++) {
+			if (this.pid == 3) {
+				try {
+					Thread.sleep(3 * 1000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
 			this.lcb.lcbBroadcast(i);
 		}
 	}
@@ -151,9 +159,9 @@ public class Process {
 		this.sender.start();
 	}
 
-	public void setDependencies(String[] dependencies) {
-		for (int i = 0; i < dependencies.length; i++) {
-			int dependencyId = Integer.parseInt(dependencies[i]);
+	public void setDependencies(ArrayList<String> dependencies) {
+		for (int i = 0; i < dependencies.size(); i++) {
+			int dependencyId = Integer.parseInt(dependencies.get(i));
 			this.dependenciesSet.add(dependencyId);
 		}
 	}
