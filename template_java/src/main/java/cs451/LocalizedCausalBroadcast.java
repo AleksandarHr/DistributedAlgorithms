@@ -4,6 +4,7 @@ import java.net.InetSocketAddress;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
 
 public class LocalizedCausalBroadcast {
@@ -12,11 +13,20 @@ public class LocalizedCausalBroadcast {
 	
 	private int[] vectorClock;
 	ReentrantLock vcLock = new ReentrantLock();
-	private ConcurrentHashMap<Integer, ConcurrentSkipListSet<Message>> pending;
+	private PendingHandler pendingThread;
 
+	private CopyOnWriteArrayList<Message> pendingArray;
+	
 	public LocalizedCausalBroadcast(UniformReliableBroadcast urb) {
 		this.urb = urb;
 		this.process = this.urb.getProcess();
+		this.pendingArray = new CopyOnWriteArrayList<Message>();
+		this.pendingThread = new PendingHandler();
+		this.pendingThread.start();
+	}
+	
+	public void killPendingThread() {
+		this.pendingThread.interrupt();
 	}
 	
 	public void lcbBroadcast(int msgId) {
@@ -30,8 +40,6 @@ public class LocalizedCausalBroadcast {
 		int[] msgVc = this.prepareMessageVc();
 		Message msg = new Message(msgId, this.process.getProcessId(), msgVc);
 		System.out.println("PASSED VC:");
-		printArray(msgVc);
-		System.out.println("RETRIEVED VC:");
 		printArray(msg.getMessageVc());
 		this.urb.urbBroadcast(msg);
 	}
@@ -74,7 +82,7 @@ public class LocalizedCausalBroadcast {
 			return false;
 		}
 		for (int i = 0; i < processVc.length; i++) {
-			System.out.println("MSG VC = " + messageVc[i] + " :: PROCESS VC = " + processVc[i]);
+//			System.out.println("MSG VC = " + messageVc[i] + " :: PROCESS VC = " + processVc[i]);
 			if (messageVc[i] > processVc[i]) {
 				return false;
 			}
@@ -86,22 +94,7 @@ public class LocalizedCausalBroadcast {
 	public void lcbDeliver(Message msg, InetSocketAddress source) {
 		int processCount = this.process.getAllProcesses().size();
 		// initialize the pending messages data structure
-		if (this.pending == null) {
-			this.pending = new ConcurrentHashMap<Integer, ConcurrentSkipListSet<Message>>();
-			// initialize pending
-			for (int i = 1; i <= processCount; i++) {
-				ConcurrentSkipListSet<Message> skipListSet = new ConcurrentSkipListSet<Message>(
-						(m1, m2) -> {
-							if (m1.getMsgId() < m2.getMsgId()) {
-								return -1;
-							} else if (m1.getMsgId() > m2.getMsgId()) {
-								return 1;
-							}
-							return 0;
-				});
-				this.pending.put(i, skipListSet);
-			}
-		}
+
 		if (this.vectorClock == null) {
 			this.vectorClock = new int[processCount];
 		}
@@ -110,7 +103,6 @@ public class LocalizedCausalBroadcast {
 		boolean urbDelivered = this.urb.urbDeliver(msg , source);
 		if (urbDelivered) {
 			int pid = msg.getOriginalPid();
-			ConcurrentSkipListSet<Message> relevantPending = this.pending.get(pid);
 			// check vector clock - should we try to deliver this message?
 			this.vcLock.lock();
 			try {
@@ -120,23 +112,9 @@ public class LocalizedCausalBroadcast {
 					System.out.println("d " + msg.getOriginalPid() + " " + msg.getMsgId());
 					// if this is a message we are expecting, go over pending and try to urbDeliver
 					// messages from the same source - maybe we can deliver some of them now
-					ConcurrentSkipListSet<Message> tempPending = new ConcurrentSkipListSet<Message>(relevantPending);
-					for (Message m : relevantPending) {
-						if (this.hasDeliveredAllDependencies(m)) {
-							// if we successfully delivered message, update vector clock
-							this.vectorClock[pid - 1] = this.vectorClock[pid-1] + 1;
-							// and remove message from pending
-							tempPending.remove(m);
-							this.process.addToOutput("d " + m.getOriginalPid() + " " + m.getMsgId());
-							System.out.println("d " + m.getOriginalPid() + " " + m.getMsgId());							
-						} else {
-							break;
-						}
-					}
-					this.pending.put(pid, tempPending);
+
 				} else {
-					relevantPending.add(msg);
-					this.pending.put(pid, relevantPending);
+					this.pendingArray.add(msg);
 				}
 			} finally {
 //				boolean done = this.allDone();
@@ -146,5 +124,30 @@ public class LocalizedCausalBroadcast {
 				this.vcLock.unlock();
 			}
 		}			
+	}
+	
+	private class PendingHandler extends Thread {
+		
+		public void run() {
+			while (true) {
+				try {
+					for (Message msg : pendingArray) {
+						if (hasDeliveredAllDependencies(msg)) {
+//							 if we successfully delivered message, update vector clock
+							int pid = msg.getOriginalPid();
+							vcLock.lock();
+							vectorClock[pid - 1] = vectorClock[pid-1] + 1;
+							vcLock.unlock();
+							// and remove message from pending
+							pendingArray.remove(msg);
+							process.addToOutput("d " + msg.getOriginalPid() + " " + msg.getMsgId());
+							System.out.println("d " + msg.getOriginalPid() + " " + msg.getMsgId());						
+						}
+					}
+				} finally {
+					
+				}
+			}
+		}
 	}
 }

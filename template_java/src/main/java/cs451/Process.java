@@ -159,10 +159,9 @@ public class Process {
 		this.sender.start();
 	}
 
-	public void setDependencies(ArrayList<String> dependencies) {
-		for (int i = 0; i < dependencies.size(); i++) {
-			int dependencyId = Integer.parseInt(dependencies.get(i));
-			this.dependenciesSet.add(dependencyId);
+	public void setDependencies(String[] dependencies) {
+		for (int i = 0; i < dependencies.length; i++) {
+			this.dependenciesSet.add(Integer.parseInt(dependencies[i]));
 		}
 	}
 	
@@ -191,6 +190,7 @@ public class Process {
 		this.isAlive.set(false);
 		this.listener.interrupt();
 		this.sender.interrupt();
+		this.lcb.killPendingThread();
 	}
 	
 	// Add message to be sent to a particualr destination process
