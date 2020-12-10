@@ -2,6 +2,7 @@ package cs451;
 
 import java.io.Serializable;
 import java.net.InetAddress;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class Message implements Serializable {
 
@@ -12,22 +13,36 @@ public class Message implements Serializable {
 	private int msgId;
 	private int originalPid;
 
+	private int[] messageVc;
+	
 	// Ack Message constructor - ack message has the same dest/source port/addr
 	// and message id, but has the isAck field set to true;
 	public Message(Message originalMessage) {
 		this.isAck = true;
 		this.msgId = originalMessage.getMsgId();
 		this.originalPid = originalMessage.getOriginalPid();
+		this.messageVc = new int[originalMessage.getMessageVc().length];
+		System.arraycopy(originalMessage.getMessageVc(),  0, this.messageVc, 0, this.messageVc.length);
 	}
 		
 	// Message constructor - creates a message object with provided string content, dest/source port/addr
-	// and makes it a broadcast message if specified
 	public Message(int msgId, int senderPid) {
 		this.isAck = false;
 		this.msgId = msgId;
 		this.originalPid = senderPid;
 	}
 
+	// Message constructor - creates a message object with provided string content, dest/source port/addr
+	// and message vector clock
+	public Message(int msgId, int senderPid, int[] messageVc) {
+		this.isAck = false;
+		this.msgId = msgId;
+		this.originalPid = senderPid;
+		
+		this.messageVc = new int[messageVc.length];
+		System.arraycopy(messageVc, 0, this.messageVc, 0, messageVc.length);
+	}
+	
 	public int getOriginalPid() {
 		return this.originalPid;
 	}
@@ -39,6 +54,9 @@ public class Message implements Serializable {
 	}
 	public boolean isAck() {
 		return this.isAck;
+	}
+	public int[] getMessageVc() {
+		return this.messageVc;
 	}
 	
 	@Override

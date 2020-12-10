@@ -26,6 +26,8 @@ public class Process {
 	private Integer pid;
 	private ArrayList<InetSocketAddress> allProcesses;
 
+	private Set<Integer> dependenciesSet;
+	
 	// Listener object of the process
 	private Listener listener;
 	private Sender sender;
@@ -41,6 +43,7 @@ public class Process {
 	private BestEffortBroadcast beb;
 	private UniformReliableBroadcast urb;
 	private FirstInFirstOutBroadcast fifo;
+	private LocalizedCausalBroadcast lcb;
 
 	private StringBuilder output;
 	private int messageCount;
@@ -53,7 +56,8 @@ public class Process {
 		this.isAlive = new AtomicBoolean(true);
 		this.messageCount = messageCount;
 		this.output = new StringBuilder();
-
+		this.dependenciesSet = new HashSet<Integer>();
+		
 		// try to open the process' socket
 		try {
 			this.socket = new DatagramSocket(this.port, this.ip);
@@ -73,6 +77,7 @@ public class Process {
 		this.beb = new BestEffortBroadcast(this);
 		this.urb = new UniformReliableBroadcast(this.beb);
 		this.fifo = new FirstInFirstOutBroadcast(this.urb);
+		this.lcb = new LocalizedCausalBroadcast(this.urb);
 	}
 
 	// FIFO broadcast 'messageCount' number of messages with IDs from 1 to messageCount
@@ -81,7 +86,22 @@ public class Process {
 			this.fifo.fifoBroadcast(i);
 		}
 	}
-
+	
+	// LCB broadcast 'messageCount' number of messages with IDs from 1 to messageCount
+	public void beginLcb() {
+		for (int i = 1; i <= this.messageCount; i++) {
+			if (this.pid == 3) {
+				try {
+					Thread.sleep(3 * 1000);
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+			this.lcb.lcbBroadcast(i);
+		}
+	}
+	
 	public void sendP2PMessage(Message msg, InetAddress ip, int port) {
 		// if msg is not an ack, add to hashmap of messages to be sent
 		if (!msg.isAck()) {
@@ -139,6 +159,16 @@ public class Process {
 		this.sender.start();
 	}
 
+	public void setDependencies(String[] dependencies) {
+		for (int i = 0; i < dependencies.length; i++) {
+			this.dependenciesSet.add(Integer.parseInt(dependencies[i]));
+		}
+	}
+	
+	public Set<Integer> getDependencies() {
+		return this.dependenciesSet;
+	}
+	
 	// Checks if the process is still running
 	public boolean isAlive() {
 		return this.isAlive.get();
@@ -160,6 +190,7 @@ public class Process {
 		this.isAlive.set(false);
 		this.listener.interrupt();
 		this.sender.interrupt();
+		this.lcb.killPendingThread();
 	}
 	
 	// Add message to be sent to a particualr destination process
@@ -202,6 +233,10 @@ public class Process {
 		return this.fifo;
 	}
 
+	public LocalizedCausalBroadcast getLcb() {
+		return this.lcb;
+	}
+	
 	public ArrayList<InetSocketAddress> getAllProcesses() {
 		return this.allProcesses;
 	}

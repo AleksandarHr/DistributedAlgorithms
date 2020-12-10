@@ -43,10 +43,10 @@ public class Listener extends Thread {
 				if (msg != null) {
 					if (msg.isAck()) {
 //						System.out.println("ACK for message with ID = " + msg.getMsgId() + " from process = " + senderPid);
-						this.handleAckMessage(msg, senderAddr, this.process.getUrb(), this.process.getFifo());
+						this.handleAckMessage(msg, senderAddr);
 					} else {
 //						System.out.println("MESSAGE " + msg.getMsgId() + " form = " + senderPort);
-						this.handleRegularMessage(msg, senderIp, senderPort, this.process.getUrb(), this.process.getFifo());
+						this.handleRegularMessage(msg, senderIp, senderPort);
 					}
 				}
 				
@@ -82,21 +82,23 @@ public class Listener extends Thread {
 	/*
 	 * 
 	 */
-	private void handleAckMessage(Message msg, InetSocketAddress sender, UniformReliableBroadcast urb, FirstInFirstOutBroadcast fifo) {
+	private void handleAckMessage(Message msg, InetSocketAddress sender) {
 		// Add ack for the message from the given sender and try to FIFO deliver
 		this.process.addAcknowledgement(msg, sender);
-//		urb.urbDeliver(msg, sender);
-		fifo.fifoDeliver(msg, sender);
+//		this.process.getUrb().urbDeliver(msg, sender);
+//		this.process.getFifo().fifoDeliver(msg, sender);
+		this.process.getLcb().lcbDeliver(msg, sender);
 	}
 	
 	/*
 	 * 
 	 */
-	private void handleRegularMessage(Message msg, InetAddress ip, int port, UniformReliableBroadcast urb , FirstInFirstOutBroadcast fifo) {
+	private void handleRegularMessage(Message msg, InetAddress ip, int port) {
 		// Send an ack for the message to the sender & try to fifo deliver
 		Message ack = new Message(msg);
 		this.process.sendAck(ack, new InetSocketAddress(ip, port));
-//		urb.urbDeliver(msg, new InetSocketAddress(ip, port));
-		fifo.fifoDeliver(msg, new InetSocketAddress(ip, port));
+//		this.process.getUrb().urbDeliver(msg, new InetSocketAddress(ip, port));
+//		this.process.getFifo().fifoDeliver(msg, new InetSocketAddress(ip, port));
+		this.process.getLcb().lcbDeliver(msg, new InetSocketAddress(ip, port));
 	}
 }

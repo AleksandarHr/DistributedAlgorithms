@@ -52,15 +52,22 @@ public class Main {
     public static void main(String[] args) throws InterruptedException, UnknownHostException {
         Parser parser = new Parser(args);
         parser.parse();
-
+        
+        String[] dependencies = {};
         int messageCount = 0;
         if (parser.hasConfig()) {
         	try {
         		File config = new File(parser.config());
         		Scanner myScanner = new Scanner(config);
+        		messageCount = Integer.parseInt(myScanner.nextLine());
+        		int processId = parser.myId();
+        		int lineId = 0;
         		while (myScanner.hasNextLine()) {
-        			String in = myScanner.nextLine();
-        			messageCount = Integer.parseInt(in);
+        			lineId++;
+        			String[] temp = myScanner.nextLine().trim().split(" ");        			
+        			if (lineId == processId) {
+        				dependencies = temp;
+        			}
         		}
         		myScanner.close();
         	} catch (FileNotFoundException e) {
@@ -68,7 +75,20 @@ public class Main {
         		e.printStackTrace();
         	}
         }
-               
+        
+//        ArrayList<String> dependencies = new ArrayList<String>();
+//        dependencies.add(Integer.toString(parser.myId()));
+//        int setForThis1 = 3;
+//        int setForThis2 = 4;
+//        if (setForThis1 == parser.myId()) {
+//        	dependencies.add(Integer.toString(2));
+//        	dependencies.add(Integer.toString(4));
+//        }
+//        if (setForThis2 == parser.myId()) {
+//        	dependencies.add(Integer.toString(5));
+//        }
+//        int messageCount = 5;
+        
         // example
         long pid = ProcessHandle.current().pid();
         System.out.println("My PID is " + pid + ".");
@@ -91,6 +111,7 @@ public class Main {
         	}
         }
         p.setAllProcesses(addresses);
+        p.setDependencies(dependencies);
         
         initSignalHandlers(parser, p);
         
@@ -105,8 +126,12 @@ public class Main {
 
         System.out.println("Broadcasting " + messageCount + " messages...");
         
-        p.beginFifo();
-        
+//        p.beginFifo();
+        if (parser.myId() == 3) {
+        	Thread.sleep(5 * 1000);
+        }
+        p.beginLcb();
+        System.out.println(p.getDependencies().toString());
         System.out.println("Signaling end of broadcasting messages");
         coordinator.finishedBroadcasting();
 

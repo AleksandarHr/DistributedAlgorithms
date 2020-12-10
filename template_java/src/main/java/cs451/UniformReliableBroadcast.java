@@ -24,6 +24,10 @@ public class UniformReliableBroadcast {
 		this.beb.bebBroadcast(msgId);
 	}
 
+	public void urbBroadcast(Message msg) {
+		this.beb.bebBroadcast(msg);
+	}
+	
 	// Perform URB deliver algorithm
 	public boolean urbDeliver(Message msg, InetSocketAddress source) {
 		this.beb.bebDeliver(msg);
